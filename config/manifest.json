@@ -1,0 +1,22 @@
+{
+  "name": "フォトフレーム撮影",
+  "short_name": "フォトフレーム",
+  "description": "高級ホテルレストラン向け記念日フォトフレーム撮影アプリ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a2332",
+  "theme_color": "#D4AF37",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/images/frames/frame1-thumb.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/frames/frame1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

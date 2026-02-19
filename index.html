@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- 
+    ======================================================================
+    フォトフレーム撮影サイト - メインHTML
+    高級ホテルレストラン向け記念日フォト撮影アプリケーション
+    ======================================================================
+    -->
+    
+    <!-- 文字コード設定 -->
+    <meta charset="UTF-8">
+    
+    <!-- ビューポート設定: モバイル最適化、ズーム無効 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA対応設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#D4AF37">
+    
+    <!-- PWAマニフェスト -->
+    <link rel="manifest" href="config/manifest.json">
+    
+    <title>フォトフレーム撮影</title>
+    
+    <!-- スタイルシート読み込み -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- 認証チェックスクリプト（最初に実行） -->
+    <script>
+        // 認証チェック
+        (function() {
+            const isAuthenticated = sessionStorage.getItem('authenticated');
+            const currentUrl = new URL(window.location.href);
+            const restaurantParam = currentUrl.searchParams.get('restaurant');
+            
+            // 認証されていない場合、ログイン画面にリダイレクト
+            if (!isAuthenticated) {
+                let redirectUrl = 'login.html';
+                if (restaurantParam) {
+                    redirectUrl += `?restaurant=${restaurantParam}`;
+                }
+                window.location.href = redirectUrl;
+                return;
+            }
+            
+            // 認証されている場合、レストラン情報をグローバル変数に設定
+            window.authRestaurantId = sessionStorage.getItem('restaurantId');
+            window.authRestaurantName = sessionStorage.getItem('restaurantName');
+        })();
+    </script>
+</head>
+<body>
+    <!-- 
+    ======================================================================
+    アプリケーションコンテナ
+    ======================================================================
+    -->
+    <div id="app">
+        <!-- 
+        ==================================================================
+        カメラ画面
+        ライブカメラプレビューと撮影ボタン
+        ==================================================================
+        -->
+        <div id="camera-screen" class="screen active">
+            <!-- ローディングオーバーレイ: カメラ起動中に表示 -->
+            <div id="loading-overlay" class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <p>カメラを起動中...</p>
+            </div>
+            
+            <!-- ビデオコンテナ: カメラ映像とフレームオーバーレイ -->
+            <div id="video-container">
+                <!-- カメラライブプレビュー -->
+                <video id="camera-video" autoplay playsinline></video>
+                
+                <!-- 装飾フレームオーバーレイ -->
+                <img id="frame-overlay" src="assets/images/frames/frame1.png" alt="Frame">
+            </div>
+            
+            <!-- フレーム選択トグルボタン -->
+            <button id="frame-select-toggle" class="frame-toggle-btn">🖼️</button>
+            
+            <!-- メッセージ編集トグルボタン -->
+            <button id="message-toggle" class="message-toggle-btn">💬</button>
+            
+            <!-- ログアウトボタン -->
+            <button id="logout-btn" class="logout-btn">🚪</button>
+            
+            <!-- 
+            ================================================================
+            メッセージ編集パネル
+            記念日メッセージの入力UI
+            ================================================================
+            -->
+            <div id="message-editor" class="message-editor hidden">
+                <!-- ヘッダー -->
+                <div class="message-editor-header">
+                    <h3>記念日メッセージ</h3>
+                    <button id="message-editor-close" class="close-btn">✕</button>
+                </div>
+                
+                <!-- 入力フォーム -->
+                <div class="message-editor-content">
+                    <!-- 日付入力 -->
+                    <div class="form-group">
+                        <div class="form-group-header">
+                            <label for="message-date">日付</label>
+                            <label class="toggle-label-inline">
+                                <input type="checkbox" id="message-date-enable" checked>
+                                <span>表示</span>
+                            </label>
+                        </div>
+                        <input type="date" id="message-date" class="form-input">
+                    </div>
+                    
+                    <!-- メッセージ入力 -->
+                    <div class="form-group">
+                        <div class="form-group-header">
+                            <label for="message-text">メッセージ</label>
+                            <label class="toggle-label-inline">
+                                <input type="checkbox" id="message-text-enable" checked>
+                                <span>表示</span>
+                            </label>
+                        </div>
+                        <input type="text" id="message-text" class="form-input" placeholder="記念日おめでとうございます" maxlength="40" value="記念日おめでとうございます">
+                    </div>
+                    
+                    <!-- 場所入力 -->
+                    <div class="form-group">
+                        <div class="form-group-header">
+                            <label for="message-location">場所</label>
+                            <label class="toggle-label-inline">
+                                <input type="checkbox" id="message-location-enable" checked>
+                                <span>表示</span>
+                            </label>
+                        </div>
+                        <div class="location-input-group">
+                            <input type="text" id="message-location" class="form-input location-readonly" readonly>
+                            <button type="button" id="edit-location-btn" class="btn-edit-location">編集</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 適用ボタン -->
+                    <button id="message-apply" class="btn btn-primary btn-full">適用</button>
+                </div>
+            </div>
+            
+            <!-- 
+            ================================================================
+            フレーム選択パネル
+            装飾フレームの選択UI
+            ================================================================
+            -->
+            <div id="frame-selector" class="frame-selector hidden">
+                <!-- ヘッダー -->
+                <div class="frame-selector-header">
+                    <h3>フレームを選択</h3>
+                    <button id="frame-selector-close" class="close-btn">✕</button>
+                </div>
+                
+                <!-- フレームリスト: JavaScriptで動的生成 -->
+                <div id="frame-list" class="frame-list">
+                </div>
+            </div>
+            
+            <!-- コントロールボタンエリア -->
+            <div id="controls">
+                <button id="capture-btn" class="btn btn-primary">撮影する</button>
+            </div>
+            
+            <!-- カウントダウン表示 -->
+            <div id="countdown" class="hidden"></div>
+        </div>
+
+        <!-- 
+        ==================================================================
+        結果画面
+        撮影した写真の表示と操作ボタン
+        ==================================================================
+        -->
+        <div id="result-screen" class="screen">
+            <!-- 撮影画像表示エリア -->
+            <div id="result-container">
+                <canvas id="result-canvas"></canvas>
+            </div>
+            
+            <!-- 操作ボタン -->
+            <div id="result-controls">
+                <button id="retake-btn" class="btn btn-secondary">再撮影</button>
+                <button id="download-btn" class="btn btn-primary">保存する</button>
+            </div>
+        </div>
+
+        <!-- 
+        ==================================================================
+        エラー画面
+        カメラアクセスエラー時の表示
+        ==================================================================
+        -->
+        <div id="error-screen" class="screen">
+            <div class="error-message">
+                <p id="error-text">カメラへのアクセスを許可してください</p>
+                <button id="retry-btn" class="btn btn-primary">再試行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+    ======================================================================
+    JavaScriptファイル読み込み
+    読み込み順序: app（DOM要素定義） → 各モジュール
+    ======================================================================
+    -->
+    
+    <!-- メインアプリ: 初期化とDOM要素定義（最初に読み込む） -->
+    <script src="js/app.js"></script>
+    
+    <!-- カメラモジュール: カメラ初期化とエラーハンドリング -->
+    <script src="js/camera.js"></script>
+    
+    <!-- 撮影モジュール: 写真撮影とCanvas合成 -->
+    <script src="js/capture.js"></script>
+    
+    <!-- UIモジュール: ユーザーインターフェース操作 -->
+    <script src="js/ui.js"></script>
+</body>
+</html>

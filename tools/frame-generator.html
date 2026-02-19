@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フレーム画像生成ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="number"],
+        input[type="color"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #preview {
+            margin-top: 30px;
+            text-align: center;
+        }
+        #preview canvas {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    #eee,
+                    #eee 10px,
+                    #fff 10px,
+                    #fff 20px
+                );
+        }
+        .info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        .info p {
+            margin: 5px 0;
+            color: #555;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>フォトフレーム画像生成ツール</h1>
+        
+        <div class="control-group">
+            <label>画像サイズ</label>
+            <select id="size">
+                <option value="1920,1080">1920 × 1080 (Full HD)</option>
+                <option value="1280,720">1280 × 720 (HD)</option>
+                <option value="1080,1920">1080 × 1920 (縦向き Full HD)</option>
+                <option value="720,1280">720 × 1280 (縦向き HD)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>外枠の幅（px）</label>
+            <input type="number" id="outerWidth" value="40" min="1" max="200">
+        </div>
+
+        <div class="control-group">
+            <label>外枠の色</label>
+            <input type="color" id="outerColor" value="#ffffff">
+        </div>
+
+        <div class="control-group">
+            <label>内枠の幅（px）</label>
+            <input type="number" id="innerWidth" value="30" min="0" max="200">
+        </div>
+
+        <div class="control-group">
+            <label>内枠の色</label>
+            <input type="color" id="innerColor" value="#ffd700">
+        </div>
+
+        <div class="control-group">
+            <label>テキスト（オプション）</label>
+            <input type="text" id="frameText" placeholder="例: Happy Birthday!">
+        </div>
+
+        <div class="control-group">
+            <label>テキストの色</label>
+            <input type="color" id="textColor" value="#ffffff">
+        </div>
+
+        <button onclick="generateFrame()">フレーム生成</button>
+        <button onclick="downloadFrame()">ダウンロード</button>
+
+        <div id="preview"></div>
+
+        <div class="info">
+            <p><strong>使い方：</strong></p>
+            <p>1. お好みの設定を選択してください</p>
+            <p>2. 「フレーム生成」ボタンでプレビューを確認</p>
+            <p>3. 「ダウンロード」ボタンで画像を保存</p>
+            <p>4. ダウンロードした画像を assets/frame.png に配置してください</p>
+        </div>
+    </div>
+
+    <script>
+        let canvas = null;
+
+        function generateFrame() {
+            const sizeSelect = document.getElementById('size');
+            const [width, height] = sizeSelect.value.split(',').map(Number);
+            
+            const outerWidth = parseInt(document.getElementById('outerWidth').value);
+            const outerColor = document.getElementById('outerColor').value;
+            const innerWidth = parseInt(document.getElementById('innerWidth').value);
+            const innerColor = document.getElementById('innerColor').value;
+            const frameText = document.getElementById('frameText').value;
+            const textColor = document.getElementById('textColor').value;
+
+            canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (outerWidth > 0) {
+                ctx.strokeStyle = outerColor;
+                ctx.lineWidth = outerWidth;
+                ctx.strokeRect(
+                    outerWidth / 2, 
+                    outerWidth / 2, 
+                    width - outerWidth, 
+                    height - outerWidth
+                );
+            }
+
+            if (innerWidth > 0) {
+                const offset = outerWidth + 20;
+                ctx.strokeStyle = innerColor;
+                ctx.lineWidth = innerWidth;
+                ctx.strokeRect(
+                    offset + innerWidth / 2,
+                    offset + innerWidth / 2,
+                    width - (offset + innerWidth) * 2,
+                    height - (offset + innerWidth) * 2
+                );
+            }
+
+            if (frameText) {
+                const fontSize = Math.floor(height / 15);
+                ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                ctx.fillText(frameText, width / 2, height - outerWidth - 60);
+            }
+
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            preview.appendChild(canvas);
+        }
+
+        function downloadFrame() {
+            if (!canvas) {
+                alert('先にフレームを生成してください');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.download = 'frame.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        window.addEventListener('load', () => {
+            generateFrame();
+        });
+    </script>
+</body>
+</html>

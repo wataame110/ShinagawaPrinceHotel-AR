@@ -1,0 +1,125 @@
+{
+  "hotelName": "品川プリンスホテル",
+  "restaurants": [
+    {
+      "id": "table9",
+      "name": "TABLE 9 TOKYO",
+      "fullName": "DINING & BAR TABLE 9 TOKYO",
+      "category": "ダイニング・創作料理",
+      "description": "ホテル最上階で東京の景色と共に創作料理やバーを楽しめるレストラン",
+      "password": "table9tokyo",
+      "framePath": "assets/images/frames/table9.png",
+      "frameThumb": "assets/images/frames/table9-thumb.png"
+    },
+    {
+      "id": "hapuna",
+      "name": "HAPUNA",
+      "fullName": "LUXE DINING HAPUNA",
+      "category": "ビュッフェ",
+      "description": "大人向けブッフェレストラン。和洋中の多彩な料理をライブキッチン等で提供",
+      "password": "hapuna2026",
+      "framePath": "assets/images/frames/frame1.png",
+      "frameThumb": "assets/images/frames/frame1-thumb.png"
+    },
+    {
+      "id": "gojusantsugi",
+      "name": "五十三次",
+      "fullName": "味街道 五十三次",
+      "category": "和食・日本料理",
+      "description": "和食全般（寿司、天ぷら、しゃぶしゃぶ、鉄板焼きなど）を楽しめる和食レストラン",
+      "password": "gojusan53",
+      "framePath": "assets/images/frames/frame2.png",
+      "frameThumb": "assets/images/frames/frame2-thumb.png"
+    },
+    {
+      "id": "daihanten",
+      "name": "品川大飯店",
+      "fullName": "中国料理 品川大飯店",
+      "category": "中国料理",
+      "description": "一品料理からコースまで多彩な本格中国料理",
+      "password": "daihanten88",
+      "framePath": "assets/images/frames/frame4.png",
+      "frameThumb": "assets/images/frames/frame4-thumb.png"
+    },
+    {
+      "id": "ichozaka",
+      "name": "いちょう坂",
+      "fullName": "ICHOZAKA Bistro Japonais",
+      "category": "和ビストロ",
+      "description": "和食と洋を融合したビストロ",
+      "password": "ichozaka99",
+      "framePath": "assets/images/frames/ichozaka.png",
+      "frameThumb": "assets/images/frames/ichozaka-thumb.png"
+    },
+    {
+      "id": "pivot",
+      "name": "PIVOT",
+      "fullName": "SHINAGAWA PIVOT",
+      "category": "オールデイダイニング",
+      "description": "ピザや釜焼き料理などを楽しめるオールデイダイニング",
+      "password": "pivot2026",
+      "framePath": "assets/images/frames/pivot.png",
+      "frameThumb": "assets/images/frames/pivot-thumb.png"
+    },
+    {
+      "id": "jojoen",
+      "name": "叙々苑",
+      "fullName": "Jojoen Shinagawa Prince Hotel",
+      "category": "焼肉",
+      "description": "焼肉レストラン（叙々苑系列）",
+      "password": "jojoen777",
+      "framePath": "assets/images/frames/jojoen.png",
+      "frameThumb": "assets/images/frames/jojoen-thumb.png"
+    },
+    {
+      "id": "maunakea",
+      "name": "MAUNA KEA",
+      "fullName": "Mauna Kea Coffee Lounge",
+      "category": "カフェ・ラウンジ",
+      "description": "ハワイアンなラウンジでコーヒー・ケーキ等",
+      "password": "maunakea55",
+      "framePath": "assets/images/frames/maunakea.png",
+      "frameThumb": "assets/images/frames/maunakea-thumb.png"
+    },
+    {
+      "id": "boulangerie",
+      "name": "ブーランジェリー",
+      "fullName": "Boulangerie Shinagawa",
+      "category": "ベーカリー",
+      "description": "ケーキ・パン・ベーカリー",
+      "password": "boulang365",
+      "framePath": "assets/images/frames/boulangerie.png",
+      "frameThumb": "assets/images/frames/boulangerie-thumb.png"
+    },
+    {
+      "id": "kitchen",
+      "name": "品川キッチン",
+      "fullName": "Food Court Shinagawa Kitchen",
+      "category": "フードコート",
+      "description": "カジュアルな軽食・テイクアウト等",
+      "password": "kitchen123",
+      "framePath": "assets/images/frames/kitchen.png",
+      "frameThumb": "assets/images/frames/kitchen-thumb.png"
+    },
+    {
+      "id": "garden",
+      "name": "カフェガーデン",
+      "fullName": "Café & Party Garden SHINAGAWA",
+      "category": "カフェ",
+      "description": "本格インド料理・パンケーキ・ジェラートなど",
+      "password": "garden456",
+      "framePath": "assets/images/frames/garden.png",
+      "frameThumb": "assets/images/frames/garden-thumb.png"
+    },
+    {
+      "id": "tennouzu",
+      "name": "天王洲",
+      "fullName": "鉄板焼き 天王洲",
+      "category": "鉄板焼き",
+      "description": "目の前で焼き上げる贅沢な一皿",
+      "password": "tennouzu38",
+      "framePath": "assets/images/frames/frame3.png",
+      "frameThumb": "assets/images/frames/frame3-thumb.png"
+    }
+  ]
+}

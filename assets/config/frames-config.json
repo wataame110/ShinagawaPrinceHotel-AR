@@ -1,0 +1,37 @@
+{
+  "hotelName": "品川プリンスホテル",
+  "frames": [
+    {
+      "id": "hapuna",
+      "name": "ハプナ",
+      "restaurantName": "メインダイニング ハプナ",
+      "path": "assets/images/frames/frame1.png",
+      "thumbnail": "assets/images/frames/frame1-thumb.png",
+      "description": "洗練された空間で味わう本格料理"
+    },
+    {
+      "id": "shiosai",
+      "name": "潮彩",
+      "restaurantName": "日本料理 潮彩",
+      "path": "assets/images/frames/frame2.png",
+      "thumbnail": "assets/images/frames/frame2-thumb.png",
+      "description": "伝統の日本料理と季節の味"
+    },
+    {
+      "id": "tennouzu",
+      "name": "天王洲",
+      "restaurantName": "鉄板焼き 天王洲",
+      "path": "assets/images/frames/frame3.png",
+      "thumbnail": "assets/images/frames/frame3-thumb.png",
+      "description": "目の前で焼き上げる贅沢な一皿"
+    },
+    {
+      "id": "pinfan",
+      "name": "品芳",
+      "restaurantName": "中国料理 品芳",
+      "path": "assets/images/frames/frame4.png",
+      "thumbnail": "assets/images/frames/frame4-thumb.png",
+      "description": "本格広東料理の真髄"
+    }
+  ]
+}

@@ -1,0 +1,937 @@
+/*
+ * ======================================================================
+ * フォトフレーム撮影サイト - スタイルシート
+ * 高級ホテルレストラン向けデザイン
+ * ======================================================================
+ */
+
+/* ======================================================================
+ * カラーパレット定義
+ * --color-gold-primary: メインゴールド（ボタン、アクセント）
+ * --color-gold-light: ライトゴールド（ホバー、グロー）
+ * --color-navy-dark: ダークネイビー（背景）
+ * --color-navy: ネイビー（セカンダリ背景）
+ * --color-cream: クリーム（テキスト背景）
+ * --color-white: ホワイト（テキスト）
+ * ====================================================================== */
+:root {
+    --color-gold-primary: #D4AF37;
+    --color-gold-light: #F4D03F;
+    --color-gold-dark: #B8941E;
+    --color-navy-dark: #1a2332;
+    --color-navy: #2c3e50;
+    --color-navy-light: #34495e;
+    --color-cream: #FAF9F6;
+    --color-white: #FFFFFF;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --font-luxury: 'Times New Roman', 'Noto Serif JP', serif;
+    --font-modern: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
+}
+
+/* ======================================================================
+ * ベーススタイル
+ * リセットと全体のレイアウト設定
+ * ====================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-modern);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ======================================================================
+ * アプリケーションコンテナ
+ * 全画面表示の基本レイアウト
+ * ====================================================================== */
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ======================================================================
+ * スクリーン共通スタイル
+ * カメラ画面、結果画面、エラー画面の基本スタイル
+ * ====================================================================== */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    flex-direction: column;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ======================================================================
+ * カメラ画面
+ * ライブカメラプレビュー表示エリア
+ * ====================================================================== */
+#camera-screen {
+    background: var(--color-navy-dark);
+}
+
+/* ローディングオーバーレイ - カメラ起動中の表示 */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ローディングスピナー - 回転アニメーション */
+.loading-spinner {
+    width: 70px;
+    height: 70px;
+    border: 4px solid rgba(212, 175, 55, 0.2);
+    border-top: 4px solid var(--color-gold-primary);
+    border-radius: 50%;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    color: var(--color-cream);
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+/* ======================================================================
+ * ビデオコンテナ
+ * カメラ映像とフレームオーバーレイの表示エリア
+ * ====================================================================== */
+#video-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--color-navy-dark);
+}
+
+/* カメラビデオ - ライブプレビュー */
+#camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* 鏡像表示 */
+}
+
+/* フレームオーバーレイ - 装飾フレームの重ね合わせ */
+#frame-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ======================================================================
+ * コントロールボタンエリア
+ * 撮影ボタンを配置する下部エリア
+ * ====================================================================== */
+#controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 30px;
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+/* ======================================================================
+ * カウントダウン表示
+ * 撮影前の3秒カウントダウン
+ * ====================================================================== */
+#countdown {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 160px;
+    font-weight: bold;
+    font-family: var(--font-luxury);
+    color: var(--color-gold-primary);
+    text-shadow: 
+        0 0 40px rgba(212, 175, 55, 0.8),
+        0 0 80px rgba(212, 175, 55, 0.6),
+        0 8px 30px rgba(0,0,0,0.9);
+    z-index: 30;
+    animation: countdownPulse 1s ease-in-out;
+}
+
+#countdown.hidden {
+    display: none;
+}
+
+/* カウントダウンアニメーション - 拡大縮小エフェクト */
+@keyframes countdownPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.95;
+    }
+}
+
+/* ======================================================================
+ * ボタン共通スタイル
+ * 全ボタンに適用される基本デザイン
+ * ====================================================================== */
+.btn {
+    padding: 24px 60px;
+    font-size: 20px;
+    font-weight: 600;
+    font-family: var(--font-modern);
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-width: 200px;
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ボタンリップルエフェクト - クリック時の波紋 */
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+    width: 350px;
+    height: 350px;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+/* ボタン無効状態 */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* プライマリボタン - ゴールドグラデーション */
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-gold-primary) 0%, var(--color-gold-dark) 100%);
+    color: var(--color-navy-dark);
+    font-weight: 700;
+}
+
+.btn-primary:hover:not(:disabled) {
+    box-shadow: 
+        0 12px 35px rgba(212, 175, 55, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+/* セカンダリボタン - クリームカラー */
+.btn-secondary {
+    background: var(--color-cream);
+    color: var(--color-navy-dark);
+    margin-right: 15px;
+    border: 2px solid var(--color-gold-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--color-white);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+}
+
+/* ======================================================================
+ * 結果画面
+ * 撮影した写真のプレビューと操作
+ * ====================================================================== */
+#result-screen {
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+}
+
+#result-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+}
+
+/* 結果キャンバス - 撮影画像の表示 */
+#result-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 12px;
+    box-shadow: 
+        0 20px 60px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(212, 175, 55, 0.3);
+}
+
+/* 結果画面のコントロールボタン */
+#result-controls {
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+/* ======================================================================
+ * エラー画面
+ * カメラアクセスエラー等の表示
+ * ====================================================================== */
+#error-screen {
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    justify-content: center;
+    align-items: center;
+}
+
+.error-message {
+    text-align: center;
+    padding: 50px;
+    color: var(--color-cream);
+}
+
+.error-message p {
+    font-size: 18px;
+    margin-bottom: 40px;
+    line-height: 1.8;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+/* ======================================================================
+ * トグルボタン（フレーム選択・メッセージ編集・ログアウト）
+ * 画面右上の円形ボタン
+ * ====================================================================== */
+.frame-toggle-btn,
+.message-toggle-btn,
+.logout-btn {
+    position: absolute;
+    top: 25px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: rgba(26, 35, 50, 0.85);
+    backdrop-filter: blur(15px);
+    border: 2px solid var(--color-gold-primary);
+    color: var(--color-gold-primary);
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 25;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.frame-toggle-btn {
+    right: 25px;
+}
+
+.message-toggle-btn {
+    right: 100px;
+}
+
+.logout-btn {
+    left: 25px;
+    border-color: rgba(255, 59, 48, 0.5);
+    color: rgba(255, 59, 48, 0.8);
+}
+
+.frame-toggle-btn:hover,
+.message-toggle-btn:hover {
+    background: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.logout-btn:hover {
+    background: rgba(255, 59, 48, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.4);
+}
+
+.frame-toggle-btn:active,
+.message-toggle-btn:active,
+.logout-btn:active {
+    transform: scale(0.95);
+}
+
+/* ======================================================================
+ * フレーム選択パネル
+ * 下部からスライドアップする選択UI
+ * ====================================================================== */
+.frame-selector {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.98), rgba(44, 62, 80, 0.98));
+    backdrop-filter: blur(30px);
+    border-radius: 30px 30px 0 0;
+    padding: 30px;
+    z-index: 30;
+    max-height: 55vh;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-top: 2px solid var(--color-gold-primary);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+}
+
+.frame-selector.active {
+    transform: translateY(0);
+}
+
+.frame-selector.hidden {
+    display: block;
+}
+
+/* フレーム選択ヘッダー */
+.frame-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.frame-selector-header h3 {
+    color: var(--color-gold-primary);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* 閉じるボタン */
+.close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid var(--color-gold-primary);
+    color: var(--color-gold-primary);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: rotate(90deg);
+}
+
+.close-btn:active {
+    transform: rotate(90deg) scale(0.9);
+}
+
+/* フレームリスト - グリッドレイアウト */
+.frame-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 20px;
+    overflow-y: auto;
+    max-height: calc(55vh - 120px);
+    padding: 5px;
+}
+
+/* スクロールバーのカスタマイズ */
+.frame-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.frame-list::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 4px;
+}
+
+.frame-list::-webkit-scrollbar-thumb {
+    background: var(--color-gold-primary);
+    border-radius: 4px;
+}
+
+/* フレームアイテム - 各フレームのサムネイル */
+.frame-item {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.frame-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+}
+
+.frame-item:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
+/* 選択中のフレーム */
+.frame-item.selected {
+    border-color: var(--color-gold-primary);
+    box-shadow: 
+        0 0 30px rgba(212, 175, 55, 0.6),
+        0 8px 25px rgba(0,0,0,0.3);
+}
+
+.frame-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* フレーム名 - 下部のラベル */
+.frame-item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
+    color: var(--color-cream);
+    padding: 10px;
+    font-size: 13px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ======================================================================
+ * メッセージ編集パネル
+ * 記念日メッセージの入力UI
+ * ====================================================================== */
+.message-editor {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.98), rgba(44, 62, 80, 0.98));
+    backdrop-filter: blur(30px);
+    border-radius: 30px 30px 0 0;
+    padding: 30px;
+    z-index: 30;
+    max-height: 65vh;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow-y: auto;
+    border-top: 2px solid var(--color-gold-primary);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+}
+
+.message-editor.active {
+    transform: translateY(0);
+}
+
+.message-editor.hidden {
+    display: block;
+}
+
+/* メッセージ編集ヘッダー */
+.message-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.message-editor-header h3 {
+    color: var(--color-gold-primary);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* メッセージ編集コンテンツ */
+.message-editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* フォームグループ - ラベルと入力欄のセット */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group label {
+    color: var(--color-cream);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* フォームグループヘッダー - ラベルとトグルを横並び */
+.form-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-group-header label {
+    margin: 0;
+}
+
+/* インライントグルラベル */
+.toggle-label-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-gold-primary);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.toggle-label-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-gold-primary);
+}
+
+.toggle-label-inline span {
+    color: var(--color-cream);
+    font-size: 13px;
+}
+
+/* フォーム入力欄 */
+.form-input {
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    background: rgba(250, 249, 246, 0.1);
+    color: var(--color-cream);
+    transition: all 0.3s ease;
+    font-family: var(--font-modern);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-gold-primary);
+    background: rgba(250, 249, 246, 0.15);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.form-input::placeholder {
+    color: rgba(250, 249, 246, 0.5);
+}
+
+/* 場所入力グループ */
+.location-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.location-input-group .form-input {
+    flex: 1;
+}
+
+.location-readonly {
+    background: rgba(250, 249, 246, 0.05);
+    cursor: default;
+}
+
+.location-readonly:focus {
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: none;
+}
+
+.btn-edit-location {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid var(--color-gold-primary);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--color-gold-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-edit-location:hover {
+    background: rgba(212, 175, 55, 0.2);
+}
+
+.btn-edit-location:active {
+    transform: scale(0.95);
+}
+
+/* トグルグループ - チェックボックス */
+.toggle-group {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--color-cream);
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.toggle-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: var(--color-gold-primary);
+}
+
+/* 全幅ボタン */
+.btn-full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* ======================================================================
+ * レスポンシブデザイン - スマートフォン
+ * 画面幅480px以下の調整
+ * ====================================================================== */
+@media (max-width: 480px) {
+    .btn {
+        padding: 20px 45px;
+        font-size: 18px;
+        min-width: 170px;
+    }
+
+    #countdown {
+        font-size: 120px;
+    }
+
+    #result-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-secondary {
+        margin-right: 0;
+    }
+    
+    .frame-toggle-btn,
+    .message-toggle-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+        top: 20px;
+    }
+    
+    .frame-toggle-btn {
+        right: 20px;
+    }
+    
+    .message-toggle-btn {
+        right: 85px;
+    }
+    
+    .message-editor-header h3,
+    .frame-selector-header h3 {
+        font-size: 20px;
+    }
+    
+    .form-input {
+        font-size: 16px;
+        padding: 12px 16px;
+    }
+    
+    .frame-list {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 15px;
+    }
+    
+    .btn-edit-location {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+/* ======================================================================
+ * レスポンシブデザイン - 小型スマートフォン
+ * 画面幅360px以下の調整
+ * ====================================================================== */
+@media (max-width: 360px) {
+    .btn {
+        padding: 18px 40px;
+        font-size: 17px;
+        min-width: 150px;
+    }
+    
+    #countdown {
+        font-size: 90px;
+    }
+    
+    .frame-toggle-btn,
+    .message-toggle-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        top: 15px;
+    }
+    
+    .frame-toggle-btn {
+        right: 15px;
+    }
+    
+    .message-toggle-btn {
+        right: 75px;
+    }
+}
+
+/* ======================================================================
+ * レスポンシブデザイン - ランドスケープモード
+ * 横向き表示の最適化
+ * ====================================================================== */
+@media (orientation: landscape) {
+    #controls {
+        padding: 15px 25px;
+    }
+
+    #result-controls {
+        padding: 15px 25px;
+        flex-direction: row;
+    }
+
+    .btn {
+        padding: 18px 40px;
+        font-size: 18px;
+        min-width: 150px;
+    }
+    
+    #countdown {
+        font-size: 110px;
+    }
+    
+    .frame-selector,
+    .message-editor {
+        max-height: 75vh;
+    }
+    
+    .frame-list {
+        max-height: calc(75vh - 120px);
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    }
+}
+
+/* ======================================================================
+ * レスポンシブデザイン - 低高度ランドスケープ
+ * 横向き表示で高さが500px以下の場合
+ * ====================================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .btn {
+        padding: 14px 32px;
+        font-size: 16px;
+        min-width: 130px;
+    }
+    
+    #countdown {
+        font-size: 80px;
+    }
+    
+    .frame-toggle-btn,
+    .message-toggle-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        top: 12px;
+    }
+    
+    .frame-toggle-btn {
+        right: 12px;
+    }
+    
+    .message-toggle-btn {
+        right: 72px;
+    }
+    
+    #controls {
+        padding: 12px 20px;
+    }
+    
+    .frame-selector,
+    .message-editor {
+        max-height: 85vh;
+    }
+}
