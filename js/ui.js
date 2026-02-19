@@ -232,6 +232,56 @@ function closeFrameSelector() {
 // ======================================================================
 
 /**
+ * カメラヘッダータイトルを更新
+ * レストラン名をヘッダーに表示
+ * 
+ * @returns {void}
+ */
+function updateCameraHeader() {
+    const restaurantName = window.authRestaurantName || sessionStorage.getItem('restaurantName');
+    if (restaurantName && cameraHeaderTitle) {
+        cameraHeaderTitle.textContent = `品川プリンスホテル　${restaurantName}`;
+    }
+}
+
+/**
+ * プレビューガイドを更新
+ * 現在のメッセージ設定に基づいてプレビューガイドテキストを更新
+ * 
+ * @returns {void}
+ */
+function updatePreviewGuide() {
+    if (!previewGuideText) return;
+    
+    const lines = [];
+    
+    // 日付が有効な場合
+    if (messageConfig.date.enabled && messageConfig.date.value) {
+        const dateObj = new Date(messageConfig.date.value);
+        const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+        lines.push(`📅 ${formattedDate}`);
+    }
+    
+    // メッセージが有効な場合
+    if (messageConfig.text.enabled && messageConfig.text.value) {
+        lines.push(`💐 ${messageConfig.text.value}`);
+    }
+    
+    // 場所が有効な場合
+    if (messageConfig.location.enabled && messageConfig.location.value) {
+        lines.push(`📍 ${messageConfig.location.value}`);
+    }
+    
+    // すべて無効な場合のデフォルトメッセージ
+    if (lines.length === 0) {
+        lines.push('フレーム内に収まるように調整してください');
+    }
+    
+    // HTMLとして設定（改行を<br>に変換）
+    previewGuideText.innerHTML = lines.join('<br>');
+}
+
+/**
  * メッセージ編集パネルを開く
  * スライドアップアニメーションで表示
  * 
@@ -285,6 +335,9 @@ function applyMessageSettings() {
     
     messageConfig.location.enabled = messageLocationEnableCheckbox.checked;
     messageConfig.location.value = messageLocationInput.value;
+    
+    // プレビューガイドを更新
+    updatePreviewGuide();
     
     // メッセージ編集パネルを閉じる
     closeMessageEditor();
@@ -382,4 +435,36 @@ logoutBtn.addEventListener('click', () => {
         // ログイン画面にリダイレクト
         window.location.href = 'login.html';
     }
+});
+
+// メッセージ入力欄の変更時にリアルタイムでプレビューを更新
+messageDateInput.addEventListener('change', () => {
+    messageConfig.date.value = messageDateInput.value;
+    updatePreviewGuide();
+});
+
+messageTextInput.addEventListener('input', () => {
+    messageConfig.text.value = messageTextInput.value;
+    updatePreviewGuide();
+});
+
+messageLocationInput.addEventListener('input', () => {
+    messageConfig.location.value = messageLocationInput.value;
+    updatePreviewGuide();
+});
+
+// チェックボックスの変更時にリアルタイムでプレビューを更新
+messageDateEnableCheckbox.addEventListener('change', () => {
+    messageConfig.date.enabled = messageDateEnableCheckbox.checked;
+    updatePreviewGuide();
+});
+
+messageTextEnableCheckbox.addEventListener('change', () => {
+    messageConfig.text.enabled = messageTextEnableCheckbox.checked;
+    updatePreviewGuide();
+});
+
+messageLocationEnableCheckbox.addEventListener('change', () => {
+    messageConfig.location.enabled = messageLocationEnableCheckbox.checked;
+    updatePreviewGuide();
 });

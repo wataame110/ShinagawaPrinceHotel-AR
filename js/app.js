@@ -20,8 +20,10 @@ const errorScreen = document.getElementById('error-screen');        // エラー
 const loadingOverlay = document.getElementById('loading-overlay');  // カメラ起動中のオーバーレイ
 
 // --- カメラ関連要素 ---
+const cameraHeaderTitle = document.getElementById('camera-header-title');  // ヘッダータイトル
 const cameraVideo = document.getElementById('camera-video');        // カメラライブプレビュー
 const frameOverlay = document.getElementById('frame-overlay');      // 装飾フレーム画像
+const previewGuideText = document.getElementById('preview-guide-text');    // プレビューガイドテキスト
 const captureBtn = document.getElementById('capture-btn');          // 撮影ボタン
 const countdown = document.getElementById('countdown');             // カウントダウン表示
 
@@ -150,6 +152,10 @@ window.addEventListener('load', async () => {
     
     // フレーム設定ファイルを読み込み
     loadFramesConfig();
+    
+    // ヘッダーとプレビューガイドを更新
+    updateCameraHeader();
+    updatePreviewGuide();
     
     // カメラを初期化
     initCamera();

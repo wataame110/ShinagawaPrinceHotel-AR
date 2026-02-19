@@ -82,10 +82,116 @@ body {
  * ライブカメラプレビュー表示エリア
  * ====================================================================== */
 #camera-screen {
-    background: var(--color-navy-dark);
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+    overflow-y: auto;
 }
 
-/* ローディングオーバーレイ - カメラ起動中の表示 */
+/* ヘッダーエリア */
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.camera-header-title {
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin: 0;
+    text-align: center;
+    flex: 1;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ======================================================================
+ * ビデオコンテナ
+ * カメラ映像とフレームオーバーレイの表示エリア（カード形式）
+ * ====================================================================== */
+#video-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    aspect-ratio: 3 / 4;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 3px var(--color-gold-primary),
+        0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+/* カメラビデオ - ライブプレビュー */
+#camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+/* フレームオーバーレイ - 装飾フレームの重ね合わせ */
+#frame-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* プレビューガイドテキスト */
+.preview-guide {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26, 35, 50, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    z-index: 15;
+    pointer-events: none;
+}
+
+.preview-guide-text {
+    color: var(--color-cream);
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* ======================================================================
+ * コントロールボタンエリア
+ * 撮影ボタンを配置するエリア（プレビュー外）
+ * ====================================================================== */
+#controls {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
 .loading-overlay {
     position: absolute;
     top: 0;
@@ -364,40 +470,29 @@ body {
 
 /* ======================================================================
  * トグルボタン（フレーム選択・メッセージ編集・ログアウト）
- * 画面右上の円形ボタン
+ * ヘッダーエリア内の円形ボタン
  * ====================================================================== */
 .frame-toggle-btn,
 .message-toggle-btn,
 .logout-btn {
-    position: absolute;
-    top: 25px;
-    width: 65px;
-    height: 65px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     background: rgba(26, 35, 50, 0.85);
     backdrop-filter: blur(15px);
     border: 2px solid var(--color-gold-primary);
     color: var(--color-gold-primary);
-    font-size: 28px;
+    font-size: 20px;
     cursor: pointer;
-    z-index: 25;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.frame-toggle-btn {
-    right: 25px;
-}
-
-.message-toggle-btn {
-    right: 100px;
+    flex-shrink: 0;
 }
 
 .logout-btn {
-    left: 25px;
     border-color: rgba(255, 59, 48, 0.5);
     color: rgba(255, 59, 48, 0.8);
 }

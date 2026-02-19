@@ -71,6 +71,23 @@
                 <p>カメラを起動中...</p>
             </div>
             
+            <!-- ヘッダーエリア: レストラン名表示 -->
+            <div class="camera-header">
+                <!-- ログアウトボタン -->
+                <button id="logout-btn" class="logout-btn">🚪</button>
+                
+                <h2 class="camera-header-title" id="camera-header-title">品川プリンスホテル</h2>
+                
+                <!-- ヘッダー右側のボタングループ -->
+                <div class="header-buttons">
+                    <!-- メッセージ編集トグルボタン -->
+                    <button id="message-toggle" class="message-toggle-btn">💬</button>
+                    
+                    <!-- フレーム選択トグルボタン -->
+                    <button id="frame-select-toggle" class="frame-toggle-btn">🖼️</button>
+                </div>
+            </div>
+            
             <!-- ビデオコンテナ: カメラ映像とフレームオーバーレイ -->
             <div id="video-container">
                 <!-- カメラライブプレビュー -->
@@ -78,16 +95,16 @@
                 
                 <!-- 装飾フレームオーバーレイ -->
                 <img id="frame-overlay" src="assets/images/frames/frame1.png" alt="Frame">
+                
+                <!-- プレビューガイド: メッセージプレビュー表示 -->
+                <div class="preview-guide">
+                    <p class="preview-guide-text" id="preview-guide-text">
+                        📅 2026年2月19日<br>
+                        💐 記念日おめでとうございます<br>
+                        📍 品川プリンスホテル
+                    </p>
+                </div>
             </div>
-            
-            <!-- フレーム選択トグルボタン -->
-            <button id="frame-select-toggle" class="frame-toggle-btn">🖼️</button>
-            
-            <!-- メッセージ編集トグルボタン -->
-            <button id="message-toggle" class="message-toggle-btn">💬</button>
-            
-            <!-- ログアウトボタン -->
-            <button id="logout-btn" class="logout-btn">🚪</button>
             
             <!-- 
             ================================================================
