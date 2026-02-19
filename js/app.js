@@ -21,11 +21,13 @@ const loadingOverlay = document.getElementById('loading-overlay');  // カメラ
 
 // --- カメラ関連要素 ---
 const cameraHeaderTitle = document.getElementById('camera-header-title');  // ヘッダータイトル
-const cameraVideo = document.getElementById('camera-video');        // カメラライブプレビュー
-const frameOverlay = document.getElementById('frame-overlay');      // 装飾フレーム画像
-const previewGuideText = document.getElementById('preview-guide-text');    // プレビューガイドテキスト
-const captureBtn = document.getElementById('capture-btn');          // 撮影ボタン
-const countdown = document.getElementById('countdown');             // カウントダウン表示
+const videoContainer = document.getElementById('video-container');          // ビデオコンテナ
+const cameraVideo = document.getElementById('camera-video');                // カメラライブプレビュー
+const frameOverlay = document.getElementById('frame-overlay');              // 装飾フレーム画像
+const previewGuideText = document.getElementById('preview-guide-text');     // プレビューガイドテキスト
+const switchCameraBtn = document.getElementById('switch-camera-btn');       // カメラ切り替えボタン
+const captureBtn = document.getElementById('capture-btn');                  // 撮影ボタン
+const countdown = document.getElementById('countdown');                     // カウントダウン表示
 
 // --- フレーム選択UI ---
 const frameSelectToggle = document.getElementById('frame-select-toggle');  // フレーム選択開閉ボタン
@@ -68,6 +70,13 @@ const retryBtn = document.getElementById('retry-btn');              // 再試行
  * @type {MediaStream|null}
  */
 let stream = null;
+
+/**
+ * 現在のカメラ方向
+ * 'user' = インカメラ（前面）, 'environment' = アウトカメラ（背面）
+ * @type {string}
+ */
+let currentFacingMode = 'user';
 
 /**
  * 現在読み込まれているフレーム画像オブジェクト
@@ -122,6 +131,20 @@ let messageConfig = {
  * 5. Service Workerを登録（対応ブラウザのみ）
  */
 window.addEventListener('load', async () => {
+    // ======================================================
+    // iOS Safari の100vh問題に対応するビューポート高さ設定
+    // アドレスバーの高さを除いた実際の表示高さを--vhに設定
+    // ======================================================
+    function setVH() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(setVH, 200);  // 回転完了後に再計算
+    });
+    
     // 今日の日付を取得してISO形式に変換（YYYY-MM-DD）
     const today = new Date().toISOString().split('T')[0];
     

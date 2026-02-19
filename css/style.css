@@ -7,12 +7,6 @@
 
 /* ======================================================================
  * カラーパレット定義
- * --color-gold-primary: メインゴールド（ボタン、アクセント）
- * --color-gold-light: ライトゴールド（ホバー、グロー）
- * --color-navy-dark: ダークネイビー（背景）
- * --color-navy: ネイビー（セカンダリ背景）
- * --color-cream: クリーム（テキスト背景）
- * --color-white: ホワイト（テキスト）
  * ====================================================================== */
 :root {
     --color-gold-primary: #D4AF37;
@@ -26,11 +20,12 @@
     --color-shadow: rgba(0, 0, 0, 0.3);
     --font-luxury: 'Times New Roman', 'Noto Serif JP', serif;
     --font-modern: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
+    --header-height: 60px;
+    --controls-height: 90px;
 }
 
 /* ======================================================================
  * ベーススタイル
- * リセットと全体のレイアウト設定
  * ====================================================================== */
 * {
     margin: 0;
@@ -38,39 +33,51 @@
     box-sizing: border-box;
 }
 
+html {
+    /* dvh: iOS Safariのアドレスバーを除いた動的ビューポート高さ（Safari 15.4+対応）
+     * フォールバック: JavaScriptで設定される --vh 変数を使用 */
+    height: -webkit-fill-available;
+    height: 100%;
+}
+
 body {
     font-family: var(--font-modern);
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    background: var(--color-navy-dark);
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+    /* --vh はJSで window.innerHeight に基づいて設定される */
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    /* dvh 対応ブラウザではこちらを使用 */
+    height: 100dvh;
 }
 
 /* ======================================================================
  * アプリケーションコンテナ
- * 全画面表示の基本レイアウト
  * ====================================================================== */
 #app {
     width: 100%;
-    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
     position: relative;
+    overflow: hidden;
 }
 
 /* ======================================================================
  * スクリーン共通スタイル
- * カメラ画面、結果画面、エラー画面の基本スタイル
  * ====================================================================== */
 .screen {
     display: none;
     width: 100%;
-    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
     position: absolute;
     top: 0;
     left: 0;
     flex-direction: column;
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    overflow: hidden;
 }
 
 .screen.active {
@@ -78,73 +85,98 @@ body {
 }
 
 /* ======================================================================
- * カメラ画面
- * ライブカメラプレビュー表示エリア
+ * カメラ画面ヘッダー
+ * レストラン名とツールボタンを表示
  * ====================================================================== */
-#camera-screen {
-    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    gap: 20px;
-    overflow-y: auto;
-}
-
-/* ヘッダーエリア */
 .camera-header {
+    flex-shrink: 0;
+    height: var(--header-height);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
+    padding: 0 12px;
+    background: rgba(26, 35, 50, 0.95);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+    z-index: 10;
 }
 
 .camera-header-title {
     color: var(--color-gold-primary);
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     margin: 0;
     text-align: center;
     flex: 1;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .header-buttons {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
+    flex-shrink: 0;
+}
+
+/* ======================================================================
+ * トグルボタン（フレーム選択・メッセージ編集・ログアウト）
+ * ====================================================================== */
+.frame-toggle-btn,
+.message-toggle-btn,
+.logout-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1.5px solid var(--color-gold-primary);
+    color: var(--color-gold-primary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.logout-btn {
+    border-color: rgba(255, 59, 48, 0.6);
+    color: rgba(255, 80, 70, 0.9);
+    background: rgba(255, 59, 48, 0.08);
+}
+
+.frame-toggle-btn:active,
+.message-toggle-btn:active,
+.logout-btn:active {
+    transform: scale(0.9);
 }
 
 /* ======================================================================
  * ビデオコンテナ
- * カメラ映像とフレームオーバーレイの表示エリア（カード形式）
+ * カメラ映像とフレームオーバーレイ
  * ====================================================================== */
 #video-container {
+    flex: 1;
     position: relative;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    aspect-ratio: 3 / 4;
-    border-radius: 20px;
     overflow: hidden;
     background: #000;
-    box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.5),
-        0 0 0 3px var(--color-gold-primary),
-        0 0 20px rgba(212, 175, 55, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* カメラビデオ - ライブプレビュー */
+/* カメラライブプレビュー
+ * transform（反転）はJS側で currentFacingMode に応じて動的に設定 */
 #camera-video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transform: scaleX(-1);
 }
 
-/* フレームオーバーレイ - 装飾フレームの重ね合わせ */
+/* 装飾フレームオーバーレイ */
 #frame-overlay {
     position: absolute;
     top: 0;
@@ -156,42 +188,78 @@ body {
     z-index: 10;
 }
 
-/* プレビューガイドテキスト */
+/* プレビューガイド - メッセージ内容を表示 */
 .preview-guide {
     position: absolute;
-    bottom: 20px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26, 35, 50, 0.85);
-    backdrop-filter: blur(10px);
-    padding: 8px 16px;
-    border-radius: 20px;
+    background: rgba(26, 35, 50, 0.80);
+    backdrop-filter: blur(8px);
+    padding: 6px 14px;
+    border-radius: 16px;
     border: 1px solid rgba(212, 175, 55, 0.5);
     z-index: 15;
     pointer-events: none;
+    max-width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .preview-guide-text {
     color: var(--color-cream);
-    font-size: 12px;
+    font-size: 11px;
     text-align: center;
-    line-height: 1.4;
+    line-height: 1.5;
+    white-space: normal;
 }
 
 /* ======================================================================
- * コントロールボタンエリア
- * 撮影ボタンを配置するエリア（プレビュー外）
+ * 撮影ボタンエリア
  * ====================================================================== */
 #controls {
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 20px 0;
+    flex-shrink: 0;
+    height: var(--controls-height);
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
+    background: rgba(26, 35, 50, 0.95);
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 0 20px;
 }
+
+/* カメラ切り替えボタン */
+.btn-switch-camera {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.12);
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    color: var(--color-gold-primary);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-switch-camera:active {
+    transform: scale(0.9) rotate(180deg);
+    background: rgba(212, 175, 55, 0.25);
+}
+
+.btn-switch-camera:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ======================================================================
+ * ローディングオーバーレイ
+ * カメラ起動中の表示
+ * ====================================================================== */
 .loading-overlay {
     position: absolute;
     top: 0;
@@ -212,101 +280,44 @@ body {
     pointer-events: none;
 }
 
-/* ローディングスピナー - 回転アニメーション */
 .loading-spinner {
-    width: 70px;
-    height: 70px;
-    border: 4px solid rgba(212, 175, 55, 0.2);
-    border-top: 4px solid var(--color-gold-primary);
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(212, 175, 55, 0.2);
+    border-top: 3px solid var(--color-gold-primary);
     border-radius: 50%;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 30px;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
 .loading-overlay p {
     color: var(--color-cream);
-    font-size: 18px;
-    font-weight: 300;
+    font-size: 16px;
     letter-spacing: 2px;
-    margin: 0;
-}
-
-/* ======================================================================
- * ビデオコンテナ
- * カメラ映像とフレームオーバーレイの表示エリア
- * ====================================================================== */
-#video-container {
-    flex: 1;
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: var(--color-navy-dark);
-}
-
-/* カメラビデオ - ライブプレビュー */
-#camera-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1); /* 鏡像表示 */
-}
-
-/* フレームオーバーレイ - 装飾フレームの重ね合わせ */
-#frame-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    pointer-events: none;
-    z-index: 10;
-}
-
-/* ======================================================================
- * コントロールボタンエリア
- * 撮影ボタンを配置する下部エリア
- * ====================================================================== */
-#controls {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 30px;
-    background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
 }
 
 /* ======================================================================
  * カウントダウン表示
- * 撮影前の3秒カウントダウン
+ * position: fixed でどこからでも画面中央に表示
  * ====================================================================== */
 #countdown {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 160px;
+    font-size: 130px;
     font-weight: bold;
     font-family: var(--font-luxury);
     color: var(--color-gold-primary);
-    text-shadow: 
+    text-shadow:
         0 0 40px rgba(212, 175, 55, 0.8),
-        0 0 80px rgba(212, 175, 55, 0.6),
-        0 8px 30px rgba(0,0,0,0.9);
-    z-index: 30;
+        0 0 80px rgba(212, 175, 55, 0.5),
+        0 6px 20px rgba(0,0,0,0.9);
+    z-index: 500;
     animation: countdownPulse 1s ease-in-out;
 }
 
@@ -314,72 +325,38 @@ body {
     display: none;
 }
 
-/* カウントダウンアニメーション - 拡大縮小エフェクト */
 @keyframes countdownPulse {
-    0% {
-        transform: translate(-50%, -50%) scale(0.3);
-        opacity: 0;
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.4);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.95;
-    }
+    0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+    50%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.95; }
 }
 
 /* ======================================================================
  * ボタン共通スタイル
- * 全ボタンに適用される基本デザイン
  * ====================================================================== */
 .btn {
-    padding: 24px 60px;
-    font-size: 20px;
+    padding: 18px 50px;
+    font-size: 17px;
     font-weight: 600;
     font-family: var(--font-modern);
     letter-spacing: 1.5px;
     border: none;
     border-radius: 50px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    min-width: 200px;
-    box-shadow: 
-        0 8px 25px rgba(0,0,0,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+    min-width: 160px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     position: relative;
     overflow: hidden;
 }
 
-/* ボタンリップルエフェクト - クリック時の波紋 */
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn:active::before {
-    width: 350px;
-    height: 350px;
-}
-
 .btn:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 
-/* ボタン無効状態 */
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
 }
 
 /* プライマリボタン - ゴールドグラデーション */
@@ -389,152 +366,126 @@ body {
     font-weight: 700;
 }
 
-.btn-primary:hover:not(:disabled) {
-    box-shadow: 
-        0 12px 35px rgba(212, 175, 55, 0.4),
-        inset 0 1px 0 rgba(255,255,255,0.2);
-    transform: translateY(-2px);
-}
-
-/* セカンダリボタン - クリームカラー */
+/* セカンダリボタン */
 .btn-secondary {
-    background: var(--color-cream);
-    color: var(--color-navy-dark);
-    margin-right: 15px;
+    background: transparent;
+    color: var(--color-gold-primary);
     border: 2px solid var(--color-gold-primary);
 }
 
-.btn-secondary:hover:not(:disabled) {
-    background: var(--color-white);
-    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+/* 全幅ボタン */
+.btn-full {
+    width: 100%;
 }
 
 /* ======================================================================
  * 結果画面
- * 撮影した写真のプレビューと操作
+ * 撮影後の画像表示 - 必ずボタンが見えるレイアウト
  * ====================================================================== */
 #result-screen {
-    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    display: none;
+    flex-direction: column;
 }
 
-#result-container {
-    flex: 1;
+#result-screen.active {
+    display: flex;
+}
+
+/* 結果画面ヘッダー */
+.result-header {
+    flex-shrink: 0;
+    height: var(--header-height);
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 30px;
+    background: rgba(26, 35, 50, 0.95);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
 }
 
-/* 結果キャンバス - 撮影画像の表示 */
+.result-header-title {
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+/* 結果画像エリア - flex: 1 で残り高さを使う */
+#result-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    overflow: hidden;
+}
+
+/* 撮影画像Canvas - 必ず収まるようにmax設定 */
 #result-canvas {
     max-width: 100%;
     max-height: 100%;
-    border-radius: 12px;
-    box-shadow: 
-        0 20px 60px rgba(0,0,0,0.5),
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    box-shadow:
+        0 15px 50px rgba(0,0,0,0.5),
         0 0 0 1px rgba(212, 175, 55, 0.3);
+    display: block;
 }
 
-/* 結果画面のコントロールボタン */
+/* 結果画面ボタンエリア - 固定高さで必ず表示 */
 #result-controls {
-    padding: 30px;
+    flex-shrink: 0;
+    height: 100px;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 15px;
+    background: rgba(26, 35, 50, 0.95);
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 0 20px;
 }
 
 /* ======================================================================
  * エラー画面
- * カメラアクセスエラー等の表示
  * ====================================================================== */
 #error-screen {
-    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
     justify-content: center;
     align-items: center;
 }
 
 .error-message {
     text-align: center;
-    padding: 50px;
+    padding: 40px 30px;
     color: var(--color-cream);
 }
 
 .error-message p {
-    font-size: 18px;
-    margin-bottom: 40px;
+    font-size: 17px;
+    margin-bottom: 30px;
     line-height: 1.8;
     font-weight: 300;
-    letter-spacing: 0.5px;
-}
-
-/* ======================================================================
- * トグルボタン（フレーム選択・メッセージ編集・ログアウト）
- * ヘッダーエリア内の円形ボタン
- * ====================================================================== */
-.frame-toggle-btn,
-.message-toggle-btn,
-.logout-btn {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: rgba(26, 35, 50, 0.85);
-    backdrop-filter: blur(15px);
-    border: 2px solid var(--color-gold-primary);
-    color: var(--color-gold-primary);
-    font-size: 20px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    flex-shrink: 0;
-}
-
-.logout-btn {
-    border-color: rgba(255, 59, 48, 0.5);
-    color: rgba(255, 59, 48, 0.8);
-}
-
-.frame-toggle-btn:hover,
-.message-toggle-btn:hover {
-    background: rgba(212, 175, 55, 0.2);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-}
-
-.logout-btn:hover {
-    background: rgba(255, 59, 48, 0.2);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.4);
-}
-
-.frame-toggle-btn:active,
-.message-toggle-btn:active,
-.logout-btn:active {
-    transform: scale(0.95);
 }
 
 /* ======================================================================
  * フレーム選択パネル
- * 下部からスライドアップする選択UI
+ * position: fixed で #camera-screen の overflow に影響されない
  * ====================================================================== */
 .frame-selector {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(26, 35, 50, 0.98), rgba(44, 62, 80, 0.98));
+    background: rgba(22, 32, 48, 0.98);
     backdrop-filter: blur(30px);
-    border-radius: 30px 30px 0 0;
-    padding: 30px;
-    z-index: 30;
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    z-index: 200;
     max-height: 55vh;
     transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-top: 2px solid var(--color-gold-primary);
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
 }
 
 .frame-selector.active {
@@ -545,19 +496,18 @@ body {
     display: block;
 }
 
-/* フレーム選択ヘッダー */
 .frame-selector-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .frame-selector-header h3 {
     color: var(--color-gold-primary);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
@@ -565,47 +515,36 @@ body {
 
 /* 閉じるボタン */
 .close-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: rgba(212, 175, 55, 0.15);
     border: 1px solid var(--color-gold-primary);
     color: var(--color-gold-primary);
-    font-size: 24px;
+    font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-    background: rgba(212, 175, 55, 0.3);
-    transform: rotate(90deg);
+    transition: all 0.2s ease;
 }
 
 .close-btn:active {
-    transform: rotate(90deg) scale(0.9);
+    transform: scale(0.9);
 }
 
-/* フレームリスト - グリッドレイアウト */
+/* フレームリスト */
 .frame-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
     overflow-y: auto;
-    max-height: calc(55vh - 120px);
+    max-height: calc(55vh - 110px);
     padding: 5px;
 }
 
-/* スクロールバーのカスタマイズ */
 .frame-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.frame-list::-webkit-scrollbar-track {
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 4px;
+    width: 5px;
 }
 
 .frame-list::-webkit-scrollbar-thumb {
@@ -613,34 +552,24 @@ body {
     border-radius: 4px;
 }
 
-/* フレームアイテム - 各フレームのサムネイル */
 .frame-item {
     position: relative;
     aspect-ratio: 16 / 9;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    border: 3px solid transparent;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
     background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-
-.frame-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
 }
 
 .frame-item:active {
-    transform: translateY(-2px) scale(0.98);
+    transform: scale(0.96);
 }
 
-/* 選択中のフレーム */
 .frame-item.selected {
     border-color: var(--color-gold-primary);
-    box-shadow: 
-        0 0 30px rgba(212, 175, 55, 0.6),
-        0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
 }
 
 .frame-item img {
@@ -649,7 +578,6 @@ body {
     object-fit: cover;
 }
 
-/* フレーム名 - 下部のラベル */
 .frame-item-name {
     position: absolute;
     bottom: 0;
@@ -657,33 +585,32 @@ body {
     right: 0;
     background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
     color: var(--color-cream);
-    padding: 10px;
-    font-size: 13px;
+    padding: 8px;
+    font-size: 12px;
     text-align: center;
     font-weight: 600;
-    letter-spacing: 0.5px;
 }
 
 /* ======================================================================
  * メッセージ編集パネル
- * 記念日メッセージの入力UI
+ * position: fixed で確実に最前面表示
  * ====================================================================== */
 .message-editor {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(26, 35, 50, 0.98), rgba(44, 62, 80, 0.98));
+    background: rgba(22, 32, 48, 0.98);
     backdrop-filter: blur(30px);
-    border-radius: 30px 30px 0 0;
-    padding: 30px;
-    z-index: 30;
-    max-height: 65vh;
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    z-index: 200;
+    max-height: 70vh;
     transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     overflow-y: auto;
     border-top: 2px solid var(--color-gold-primary);
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
 }
 
 .message-editor.active {
@@ -694,46 +621,42 @@ body {
     display: block;
 }
 
-/* メッセージ編集ヘッダー */
 .message-editor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .message-editor-header h3 {
     color: var(--color-gold-primary);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
 }
 
-/* メッセージ編集コンテンツ */
 .message-editor-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
 }
 
-/* フォームグループ - ラベルと入力欄のセット */
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .form-group label {
     color: var(--color-cream);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
 
-/* フォームグループヘッダー - ラベルとトグルを横並び */
 .form-group-header {
     display: flex;
     justify-content: space-between;
@@ -744,7 +667,6 @@ body {
     margin: 0;
 }
 
-/* インライントグルラベル */
 .toggle-label-inline {
     display: flex;
     align-items: center;
@@ -767,33 +689,30 @@ body {
     font-size: 13px;
 }
 
-/* フォーム入力欄 */
 .form-input {
-    padding: 14px 18px;
+    padding: 12px 16px;
     font-size: 16px;
-    border: 2px solid rgba(212, 175, 55, 0.3);
+    border: 1.5px solid rgba(212, 175, 55, 0.3);
     border-radius: 10px;
-    background: rgba(250, 249, 246, 0.1);
+    background: rgba(250, 249, 246, 0.08);
     color: var(--color-cream);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-family: var(--font-modern);
 }
 
 .form-input:focus {
     outline: none;
     border-color: var(--color-gold-primary);
-    background: rgba(250, 249, 246, 0.15);
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    background: rgba(250, 249, 246, 0.12);
 }
 
 .form-input::placeholder {
-    color: rgba(250, 249, 246, 0.5);
+    color: rgba(250, 249, 246, 0.4);
 }
 
-/* 場所入力グループ */
 .location-input-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
 }
 
@@ -802,231 +721,76 @@ body {
 }
 
 .location-readonly {
-    background: rgba(250, 249, 246, 0.05);
-    cursor: default;
-}
-
-.location-readonly:focus {
-    border-color: rgba(212, 175, 55, 0.3);
-    box-shadow: none;
+    background: rgba(250, 249, 246, 0.04);
+    color: rgba(250, 249, 246, 0.6);
 }
 
 .btn-edit-location {
-    padding: 14px 20px;
-    font-size: 14px;
+    padding: 12px 16px;
+    font-size: 13px;
     font-weight: 600;
-    border: 2px solid var(--color-gold-primary);
+    border: 1.5px solid var(--color-gold-primary);
     border-radius: 8px;
     background: rgba(212, 175, 55, 0.1);
     color: var(--color-gold-primary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     white-space: nowrap;
-}
-
-.btn-edit-location:hover {
-    background: rgba(212, 175, 55, 0.2);
+    flex-shrink: 0;
 }
 
 .btn-edit-location:active {
     transform: scale(0.95);
 }
 
-/* トグルグループ - チェックボックス */
-.toggle-group {
-    display: flex;
-    align-items: center;
-    padding: 15px 0;
-}
-
-.toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--color-cream);
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.toggle-label input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
-    accent-color: var(--color-gold-primary);
-}
-
-/* 全幅ボタン */
-.btn-full {
-    width: 100%;
-    margin-top: 10px;
-}
-
 /* ======================================================================
- * レスポンシブデザイン - スマートフォン
- * 画面幅480px以下の調整
+ * レスポンシブ - 小画面対応
  * ====================================================================== */
-@media (max-width: 480px) {
-    .btn {
-        padding: 20px 45px;
-        font-size: 18px;
-        min-width: 170px;
+@media (max-width: 380px) {
+    .camera-header-title {
+        font-size: 11px;
     }
 
-    #countdown {
-        font-size: 120px;
+    .btn {
+        padding: 16px 36px;
+        font-size: 15px;
+        min-width: 130px;
     }
 
     #result-controls {
-        flex-direction: column;
-        gap: 15px;
+        gap: 10px;
     }
 
-    .btn-secondary {
-        margin-right: 0;
-    }
-    
-    .frame-toggle-btn,
-    .message-toggle-btn {
-        width: 55px;
-        height: 55px;
-        font-size: 24px;
-        top: 20px;
-    }
-    
-    .frame-toggle-btn {
-        right: 20px;
-    }
-    
-    .message-toggle-btn {
-        right: 85px;
-    }
-    
-    .message-editor-header h3,
-    .frame-selector-header h3 {
-        font-size: 20px;
-    }
-    
-    .form-input {
-        font-size: 16px;
-        padding: 12px 16px;
-    }
-    
-    .frame-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 15px;
-    }
-    
-    .btn-edit-location {
-        padding: 12px 16px;
-        font-size: 13px;
+    #countdown {
+        font-size: 100px;
     }
 }
 
 /* ======================================================================
- * レスポンシブデザイン - 小型スマートフォン
- * 画面幅360px以下の調整
+ * レスポンシブ - ランドスケープ（横向き）
  * ====================================================================== */
-@media (max-width: 360px) {
+@media (orientation: landscape) {
     .btn {
-        padding: 18px 40px;
-        font-size: 17px;
-        min-width: 150px;
+        padding: 14px 36px;
+        font-size: 15px;
+        min-width: 130px;
     }
-    
+
+    #controls,
+    #result-controls {
+        height: 70px;
+    }
+
     #countdown {
         font-size: 90px;
     }
-    
-    .frame-toggle-btn,
-    .message-toggle-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 22px;
-        top: 15px;
-    }
-    
-    .frame-toggle-btn {
-        right: 15px;
-    }
-    
-    .message-toggle-btn {
-        right: 75px;
-    }
-}
 
-/* ======================================================================
- * レスポンシブデザイン - ランドスケープモード
- * 横向き表示の最適化
- * ====================================================================== */
-@media (orientation: landscape) {
-    #controls {
-        padding: 15px 25px;
-    }
-
-    #result-controls {
-        padding: 15px 25px;
-        flex-direction: row;
-    }
-
-    .btn {
-        padding: 18px 40px;
-        font-size: 18px;
-        min-width: 150px;
-    }
-    
-    #countdown {
-        font-size: 110px;
-    }
-    
     .frame-selector,
     .message-editor {
-        max-height: 75vh;
+        max-height: 80vh;
     }
-    
+
     .frame-list {
-        max-height: calc(75vh - 120px);
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    }
-}
-
-/* ======================================================================
- * レスポンシブデザイン - 低高度ランドスケープ
- * 横向き表示で高さが500px以下の場合
- * ====================================================================== */
-@media (orientation: landscape) and (max-height: 500px) {
-    .btn {
-        padding: 14px 32px;
-        font-size: 16px;
-        min-width: 130px;
-    }
-    
-    #countdown {
-        font-size: 80px;
-    }
-    
-    .frame-toggle-btn,
-    .message-toggle-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 22px;
-        top: 12px;
-    }
-    
-    .frame-toggle-btn {
-        right: 12px;
-    }
-    
-    .message-toggle-btn {
-        right: 72px;
-    }
-    
-    #controls {
-        padding: 12px 20px;
-    }
-    
-    .frame-selector,
-    .message-editor {
-        max-height: 85vh;
+        max-height: calc(80vh - 110px);
     }
 }

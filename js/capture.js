@@ -64,83 +64,97 @@ async function startCountdown() {
  * @returns {void}
  */
 function captureImage() {
-    // カメラ映像の準備確認
     if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) {
         showError('カメラの映像が準備できていません。\nもう一度お試しください。');
         captureBtn.disabled = false;
         return;
     }
-    
-    // 作業用Canvasの作成
+
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { 
-        alpha: true,                    // 透明度を有効化
-        willReadFrequently: false,      // 読み取り頻度は低い（パフォーマンス最適化）
-        desynchronized: false           // 同期描画モード
+    const ctx = canvas.getContext('2d', {
+        alpha: true,
+        willReadFrequently: false,
+        desynchronized: false
     });
 
-    // カメラ映像の実解像度を取得
-    const videoWidth = cameraVideo.videoWidth;
+    // ビデオの実解像度
+    const videoWidth  = cameraVideo.videoWidth;
     const videoHeight = cameraVideo.videoHeight;
 
-    // Canvasサイズをカメラ解像度に設定
-    canvas.width = videoWidth;
-    canvas.height = videoHeight;
+    // プレビューコンテナの表示サイズ（object-fit: cover でクロップされている部分）
+    const containerWidth  = videoContainer.offsetWidth;
+    const containerHeight = videoContainer.offsetHeight;
+
+    const videoAspect     = videoWidth  / videoHeight;
+    const containerAspect = containerWidth / containerHeight;
+
+    // object-fit: cover と同じクロップ領域を計算
+    let srcX, srcY, srcW, srcH;
+    if (videoAspect > containerAspect) {
+        // ビデオが横長 → 左右をクロップ、上下はフル
+        srcH = videoHeight;
+        srcW = Math.round(videoHeight * containerAspect);
+        srcX = Math.round((videoWidth - srcW) / 2);
+        srcY = 0;
+    } else {
+        // ビデオが縦長 → 上下をクロップ、左右はフル
+        srcW = videoWidth;
+        srcH = Math.round(videoWidth / containerAspect);
+        srcX = 0;
+        srcY = Math.round((videoHeight - srcH) / 2);
+    }
+
+    // 出力解像度（クロップ領域を最大1920px幅にスケール）
+    const scale = Math.min(1920 / srcW, 1920 / srcH, 1);
+    const outW  = Math.round(srcW * scale);
+    const outH  = Math.round(srcH * scale);
+
+    canvas.width  = outW;
+    canvas.height = outH;
 
     try {
-        // === レイヤー1: カメラ映像の描画 ===
-        // 高品質レンダリング設定
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        // 鏡像反転のための変換行列設定
+        ctx.imageSmoothingEnabled  = true;
+        ctx.imageSmoothingQuality  = 'high';
+
+        // === レイヤー1: カメラ映像（インカメラは左右反転） ===
         ctx.save();
-        ctx.scale(-1, 1);  // X軸方向に反転
-        
-        // カメラ映像を描画（反転位置調整のため -videoWidth）
-        ctx.drawImage(cameraVideo, -videoWidth, 0, videoWidth, videoHeight);
-        
-        // 変換行列をリセット
+        if (currentFacingMode === 'user') {
+            // インカメラ: 左右反転して描画
+            ctx.translate(outW, 0);
+            ctx.scale(-1, 1);
+        }
+        ctx.drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
         ctx.restore();
 
-        // === レイヤー2: フレーム画像の描画 ===
+        // === レイヤー2: フレーム画像 ===
         if (frameImage && frameImage.complete) {
-            // フレーム画像を全面に描画
-            ctx.drawImage(frameImage, 0, 0, videoWidth, videoHeight);
+            ctx.drawImage(frameImage, 0, 0, outW, outH);
         }
 
-        // === レイヤー3: メッセージテキストの描画 ===
-        // いずれかの項目が有効な場合にメッセージを描画
-        const hasAnyMessage = 
-            (messageConfig.date.enabled && messageConfig.date.value) ||
-            (messageConfig.text.enabled && messageConfig.text.value) ||
+        // === レイヤー3: メッセージテキスト ===
+        const hasAnyMessage =
+            (messageConfig.date.enabled     && messageConfig.date.value)     ||
+            (messageConfig.text.enabled     && messageConfig.text.value)     ||
             (messageConfig.location.enabled && messageConfig.location.value);
-        
+
         if (hasAnyMessage) {
-            drawMessageOnCanvas(ctx, videoWidth, videoHeight);
+            drawMessageOnCanvas(ctx, outW, outH);
         }
 
         // === 結果Canvasにコピー ===
-        // 結果表示用Canvasのサイズ設定
-        resultCanvas.width = videoWidth;
-        resultCanvas.height = videoHeight;
-        
-        // 結果Canvasのコンテキスト取得
-        const resultCtx = resultCanvas.getContext('2d', { 
+        resultCanvas.width  = outW;
+        resultCanvas.height = outH;
+
+        const resultCtx = resultCanvas.getContext('2d', {
             alpha: true,
-            willReadFrequently: false 
+            willReadFrequently: false
         });
-        
-        // 高品質レンダリング設定
         resultCtx.imageSmoothingEnabled = true;
         resultCtx.imageSmoothingQuality = 'high';
-        
-        // 作業用Canvasから結果Canvasにコピー
         resultCtx.drawImage(canvas, 0, 0);
 
-        // 結果画面を表示
         showScreen('result');
-        
+
     } catch (error) {
         console.error('Capture error:', error);
         showError('撮影に失敗しました。\nもう一度お試しください。');

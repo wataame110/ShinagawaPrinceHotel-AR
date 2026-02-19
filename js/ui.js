@@ -352,6 +352,11 @@ captureBtn.addEventListener('click', () => {
     startCountdown();
 });
 
+// カメラ切り替えボタン（インカメラ ↔ アウトカメラ）
+switchCameraBtn.addEventListener('click', () => {
+    switchCamera();
+});
+
 // 再撮影ボタン
 retakeBtn.addEventListener('click', () => {
     retake();

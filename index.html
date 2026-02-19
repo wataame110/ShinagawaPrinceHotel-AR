@@ -185,6 +185,8 @@
             
             <!-- コントロールボタンエリア -->
             <div id="controls">
+                <!-- カメラ切り替えボタン（インカメラ/アウトカメラ） -->
+                <button id="switch-camera-btn" class="btn-switch-camera" title="カメラ切り替え">🔄</button>
                 <button id="capture-btn" class="btn btn-primary">撮影する</button>
             </div>
             
@@ -199,12 +201,17 @@
         ==================================================================
         -->
         <div id="result-screen" class="screen">
-            <!-- 撮影画像表示エリア -->
+            <!-- 結果画面ヘッダー -->
+            <div class="result-header">
+                <span class="result-header-title">— 撮影完了 —</span>
+            </div>
+            
+            <!-- 撮影画像表示エリア（flex: 1 で残り高さを使用） -->
             <div id="result-container">
                 <canvas id="result-canvas"></canvas>
             </div>
             
-            <!-- 操作ボタン -->
+            <!-- 操作ボタン（固定高さで必ず表示） -->
             <div id="result-controls">
                 <button id="retake-btn" class="btn btn-secondary">再撮影</button>
                 <button id="download-btn" class="btn btn-primary">保存する</button>
