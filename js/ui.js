@@ -240,7 +240,8 @@ function closeFrameSelector() {
 function updateCameraHeader() {
     const restaurantName = window.authRestaurantName || sessionStorage.getItem('restaurantName');
     if (restaurantName && cameraHeaderTitle) {
-        cameraHeaderTitle.textContent = `品川プリンスホテル　${restaurantName}`;
+        // ロゴ下のレストラン名サブテキストのみ更新（ホテル名はロゴ画像で表示）
+        cameraHeaderTitle.textContent = restaurantName;
     }
 }
 

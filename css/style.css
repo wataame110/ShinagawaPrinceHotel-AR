@@ -114,6 +114,38 @@ body {
     text-overflow: ellipsis;
 }
 
+/* ロゴ＋レストラン名のブランドエリア */
+.camera-header-brand {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ヘッダー内ロゴ画像 */
+.camera-header-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+/* ヘッダー内レストラン名（ロゴ下のサブテキスト） */
+.camera-header-restaurant {
+    color: rgba(250, 249, 246, 0.75);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 1px;
+}
+
 .header-buttons {
     display: flex;
     gap: 8px;

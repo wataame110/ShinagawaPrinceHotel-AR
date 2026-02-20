@@ -243,84 +243,93 @@ function drawMessageOnCanvas(ctx, width, height) {
 }
 
 /**
- * 撮影した画像をダウンロード保存
+ * 画像を端末のフォトライブラリへ保存
  * 
- * ファイル名形式:
- * ShinagawaPrince_{レストラン名}_YYYYMMDD_HHMMSS.png
- * 例: ShinagawaPrince_Hapuna_20260219_143025.png
+ * 保存方法の優先順位:
+ *   1. Web Share API (iOS Safari / Android Chrome)
+ *      → システム共有シートが開き「写真に保存」が選択可能
+ *   2. フォールバック: <a download> によるダウンロード
+ *      → デスクトップブラウザ / Web Share API 非対応環境
  * 
- * 処理内容:
- * 1. 現在選択中のレストラン名を取得
- * 2. 現在日時からファイル名生成
- * 3. CanvasをPNG形式に変換（最高品質）
- * 4. ダウンロードリンクを作成してDOMに追加
- * 5. クリックイベントを発火してダウンロード実行
- * 6. リンクをDOMから削除
- * 
- * @returns {void}
+ * @async
+ * @returns {Promise<void>}
  */
-function downloadImage() {
+async function downloadImage() {
+    if (!resultCanvas || !resultCanvas.width || !resultCanvas.height) {
+        alert('画像の準備ができていません。もう一度撮影してください。');
+        return;
+    }
+
+    const downloadBtn = document.getElementById('download-btn');
+    if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '保存中...';
+    }
+
+    // --- ファイル名を生成 ---
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
+    let restaurantName = 'Photo';
+    if (framesConfig && framesConfig.frames) {
+        const currentFrame = framesConfig.frames.find(f => f.id === currentFrameId);
+        if (currentFrame && currentFrame.name) restaurantName = currentFrame.name;
+    }
+
+    const filename = `ShinagawaPrince_${restaurantName}_${dateStr}_${timeStr}.png`;
+
     try {
-        // Canvasが存在し、描画されているか確認
-        if (!resultCanvas || !resultCanvas.width || !resultCanvas.height) {
-            console.error('Canvas is not ready');
-            alert('画像の準備ができていません。もう一度撮影してください。');
-            return;
-        }
-        
-        // ダウンロードリンク要素を作成
-        const link = document.createElement('a');
-        
-        // 現在日時を取得
-        const now = new Date();
-        
-        // 日付文字列の生成（YYYYMMDD形式）
-        const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-        
-        // 時刻文字列の生成（HHMMSS形式）
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-        
-        // 現在選択中のレストラン名を取得
-        let restaurantName = 'Photo';
-        if (framesConfig && framesConfig.frames) {
-            const currentFrame = framesConfig.frames.find(f => f.id === currentFrameId);
-            if (currentFrame && currentFrame.name) {
-                // レストラン名を英数字に変換（日本語のまま使用）
-                restaurantName = currentFrame.name;
+        // Canvas を Blob に変換（PNG 最高品質）
+        const blob = await new Promise((resolve, reject) => {
+            resultCanvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png', 1.0);
+        });
+
+        // ======================================================
+        // 方法1: Web Share API でフォトライブラリへ保存
+        // iOS Safari 15+ / Android Chrome 89+ 対応
+        // ======================================================
+        const file = new File([blob], filename, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file] });
+                // 共有シートが開いた時点で成功（ユーザー操作は共有シート側）
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    // ユーザーが共有シートをキャンセルした場合は正常終了
+                    return;
+                }
+                // その他のエラーはフォールバックへ
+                console.warn('Web Share API failed, falling back:', err);
             }
         }
-        
-        // ファイル名を設定（品川プリンスホテル + レストラン名形式）
-        link.download = `ShinagawaPrince_${restaurantName}_${dateStr}_${timeStr}.png`;
-        
-        // CanvasをPNG形式のData URLに変換（品質: 1.0 = 最高品質）
-        try {
-            link.href = resultCanvas.toDataURL('image/png', 1.0);
-        } catch (error) {
-            console.error('Canvas to DataURL conversion failed:', error);
-            alert('画像の変換に失敗しました。もう一度お試しください。');
-            return;
-        }
-        
-        // リンクをDOMに追加（Safari対応）
-        document.body.appendChild(link);
-        
-        // リンクのスタイルを非表示に設定
+
+        // ======================================================
+        // 方法2: フォールバック（デスクトップ / 旧ブラウザ）
+        // ダウンロードフォルダへ保存
+        // ======================================================
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
         link.style.display = 'none';
-        
-        // ダウンロードを実行
+        document.body.appendChild(link);
         link.click();
-        
-        // 少し待ってからDOMから削除
         setTimeout(() => {
             document.body.removeChild(link);
-        }, 100);
-        
-        console.log('Image download initiated:', link.download);
-        
+            URL.revokeObjectURL(url);
+        }, 200);
+
     } catch (error) {
-        console.error('Download error:', error);
-        alert('画像の保存に失敗しました。\nブラウザの設定でダウンロードを許可してください。');
+        console.error('Save error:', error);
+        alert('画像の保存に失敗しました。\nもう一度お試しください。');
+    } finally {
+        if (downloadBtn) {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = '保存する';
+        }
     }
 }
 
