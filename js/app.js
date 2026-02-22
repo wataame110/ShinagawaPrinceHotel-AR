@@ -45,11 +45,17 @@ const messageEditorClose = document.getElementById('message-editor-close');     
 const messageDateInput = document.getElementById('message-date');               // 日付入力欄
 const messageTextInput = document.getElementById('message-text');               // メッセージ入力欄
 const messageLocationInput = document.getElementById('message-location');       // 場所入力欄
-const messageDateEnableCheckbox = document.getElementById('message-date-enable');      // 日付表示チェックボックス
-const messageTextEnableCheckbox = document.getElementById('message-text-enable');      // メッセージ表示チェックボックス
+const messageDateEnableCheckbox = document.getElementById('message-date-enable');         // 日付表示チェックボックス
+const messageTextEnableCheckbox = document.getElementById('message-text-enable');         // メッセージ表示チェックボックス
 const messageLocationEnableCheckbox = document.getElementById('message-location-enable'); // 場所表示チェックボックス
 const editLocationBtn = document.getElementById('edit-location-btn');           // 場所編集ボタン
 const messageApplyBtn = document.getElementById('message-apply');               // 適用ボタン
+
+// --- フィルター選択UI ---
+const filterSelector = document.getElementById('filter-selector');         // 写真フィルターパネル
+
+// --- 顔ARフィルター選択UI ---
+const faceFilterSelector = document.getElementById('face-filter-selector'); // 顔フィルターパネル
 
 // --- 結果画面要素 ---
 const resultCanvas = document.getElementById('result-canvas');      // 撮影画像表示用Canvas
@@ -179,6 +185,14 @@ window.addEventListener('load', async () => {
     // ヘッダーとプレビューガイドを更新
     updateCameraHeader();
     updatePreviewGuide();
+    
+    // 写真フィルターUIを構築
+    if (typeof buildFilterUI === 'function') buildFilterUI();
+    
+    // 顔ARフィルターを初期化（MediaPipe CDN 読み込み後）
+    if (typeof initFaceFilter === 'function') {
+        window.addEventListener('load', () => initFaceFilter(), { once: true });
+    }
     
     // カメラを初期化
     initCamera();

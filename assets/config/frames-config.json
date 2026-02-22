@@ -1,37 +1,82 @@
 {
   "hotelName": "品川プリンスホテル",
-  "frames": [
+  "aspectRatio": "4:3",
+
+  "commonFrames": [
     {
-      "id": "hapuna",
-      "name": "ハプナ",
-      "restaurantName": "メインダイニング ハプナ",
-      "path": "assets/images/frames/frame1.png",
-      "thumbnail": "assets/images/frames/frame1-thumb.png",
-      "description": "洗練された空間で味わう本格料理"
+      "id": "common_anniversary",
+      "name": "記念日ゴールド",
+      "path": "assets/images/frames/common/frame_common_1.png",
+      "thumbnail": "assets/images/frames/common/frame_common_1_thumb.png",
+      "description": "金の装飾が輝く記念日フレーム"
     },
     {
-      "id": "shiosai",
-      "name": "潮彩",
-      "restaurantName": "日本料理 潮彩",
-      "path": "assets/images/frames/frame2.png",
-      "thumbnail": "assets/images/frames/frame2-thumb.png",
-      "description": "伝統の日本料理と季節の味"
+      "id": "common_elegant",
+      "name": "エレガント",
+      "path": "assets/images/frames/common/frame_common_2.png",
+      "thumbnail": "assets/images/frames/common/frame_common_2_thumb.png",
+      "description": "上品な花柄の装飾フレーム"
     },
     {
-      "id": "tennouzu",
-      "name": "天王洲",
-      "restaurantName": "鉄板焼き 天王洲",
-      "path": "assets/images/frames/frame3.png",
-      "thumbnail": "assets/images/frames/frame3-thumb.png",
-      "description": "目の前で焼き上げる贅沢な一皿"
+      "id": "common_birthday",
+      "name": "バースデー",
+      "path": "assets/images/frames/common/frame_common_3.png",
+      "thumbnail": "assets/images/frames/common/frame_common_3_thumb.png",
+      "description": "お誕生日おめでとうフレーム"
     },
     {
-      "id": "pinfan",
-      "name": "品芳",
-      "restaurantName": "中国料理 品芳",
-      "path": "assets/images/frames/frame4.png",
-      "thumbnail": "assets/images/frames/frame4-thumb.png",
-      "description": "本格広東料理の真髄"
+      "id": "common_simple",
+      "name": "シンプル",
+      "path": "assets/images/frames/common/frame_common_4.png",
+      "thumbnail": "assets/images/frames/common/frame_common_4_thumb.png",
+      "description": "すっきりとしたシンプルフレーム"
     }
-  ]
+  ],
+
+  "restaurantFrames": {
+    "table9": [
+      { "id": "table9_1", "name": "TABLE9 スカイ",  "path": "assets/images/frames/restaurants/table9/frame_1.png", "thumbnail": "assets/images/frames/restaurants/table9/frame_1_thumb.png" },
+      { "id": "table9_2", "name": "TABLE9 ナイト",  "path": "assets/images/frames/restaurants/table9/frame_2.png", "thumbnail": "assets/images/frames/restaurants/table9/frame_2_thumb.png" }
+    ],
+    "hapuna": [
+      { "id": "hapuna_1", "name": "ハプナ ラグジュアリー", "path": "assets/images/frames/restaurants/hapuna/frame_1.png", "thumbnail": "assets/images/frames/restaurants/hapuna/frame_1_thumb.png" },
+      { "id": "hapuna_2", "name": "ハプナ ナチュラル",    "path": "assets/images/frames/restaurants/hapuna/frame_2.png", "thumbnail": "assets/images/frames/restaurants/hapuna/frame_2_thumb.png" }
+    ],
+    "gojusantsugi": [
+      { "id": "gojusan_1", "name": "五十三次 和彩", "path": "assets/images/frames/restaurants/gojusantsugi/frame_1.png", "thumbnail": "assets/images/frames/restaurants/gojusantsugi/frame_1_thumb.png" },
+      { "id": "gojusan_2", "name": "五十三次 風雅", "path": "assets/images/frames/restaurants/gojusantsugi/frame_2.png", "thumbnail": "assets/images/frames/restaurants/gojusantsugi/frame_2_thumb.png" }
+    ],
+    "daihanten": [
+      { "id": "daihanten_1", "name": "大飯店 紅", "path": "assets/images/frames/restaurants/daihanten/frame_1.png", "thumbnail": "assets/images/frames/restaurants/daihanten/frame_1_thumb.png" },
+      { "id": "daihanten_2", "name": "大飯店 金龍", "path": "assets/images/frames/restaurants/daihanten/frame_2.png", "thumbnail": "assets/images/frames/restaurants/daihanten/frame_2_thumb.png" }
+    ],
+    "ichozaka": [
+      { "id": "ichozaka_1", "name": "いちょう坂 秋彩", "path": "assets/images/frames/restaurants/ichozaka/frame_1.png", "thumbnail": "assets/images/frames/restaurants/ichozaka/frame_1_thumb.png" },
+      { "id": "ichozaka_2", "name": "いちょう坂 春風", "path": "assets/images/frames/restaurants/ichozaka/frame_2.png", "thumbnail": "assets/images/frames/restaurants/ichozaka/frame_2_thumb.png" }
+    ],
+    "pivot": [
+      { "id": "pivot_1", "name": "PIVOT ビブラント", "path": "assets/images/frames/restaurants/pivot/frame_1.png", "thumbnail": "assets/images/frames/restaurants/pivot/frame_1_thumb.png" },
+      { "id": "pivot_2", "name": "PIVOT カジュアル",  "path": "assets/images/frames/restaurants/pivot/frame_2.png", "thumbnail": "assets/images/frames/restaurants/pivot/frame_2_thumb.png" }
+    ],
+    "jojoen": [
+      { "id": "jojoen_1", "name": "叙々苑 炎", "path": "assets/images/frames/restaurants/jojoen/frame_1.png", "thumbnail": "assets/images/frames/restaurants/jojoen/frame_1_thumb.png" },
+      { "id": "jojoen_2", "name": "叙々苑 和牛", "path": "assets/images/frames/restaurants/jojoen/frame_2.png", "thumbnail": "assets/images/frames/restaurants/jojoen/frame_2_thumb.png" }
+    ],
+    "maunakea": [
+      { "id": "maunakea_1", "name": "マウナケア サンセット", "path": "assets/images/frames/restaurants/maunakea/frame_1.png", "thumbnail": "assets/images/frames/restaurants/maunakea/frame_1_thumb.png" },
+      { "id": "maunakea_2", "name": "マウナケア ハワイアン",  "path": "assets/images/frames/restaurants/maunakea/frame_2.png", "thumbnail": "assets/images/frames/restaurants/maunakea/frame_2_thumb.png" }
+    ],
+    "boulangerie": [
+      { "id": "boulangerie_1", "name": "ブーランジェリー パリ",   "path": "assets/images/frames/restaurants/boulangerie/frame_1.png", "thumbnail": "assets/images/frames/restaurants/boulangerie/frame_1_thumb.png" },
+      { "id": "boulangerie_2", "name": "ブーランジェリー スイーツ", "path": "assets/images/frames/restaurants/boulangerie/frame_2.png", "thumbnail": "assets/images/frames/restaurants/boulangerie/frame_2_thumb.png" }
+    ],
+    "kitchen": [
+      { "id": "kitchen_1", "name": "品川キッチン フレッシュ",  "path": "assets/images/frames/restaurants/kitchen/frame_1.png", "thumbnail": "assets/images/frames/restaurants/kitchen/frame_1_thumb.png" },
+      { "id": "kitchen_2", "name": "品川キッチン カジュアル", "path": "assets/images/frames/restaurants/kitchen/frame_2.png", "thumbnail": "assets/images/frames/restaurants/kitchen/frame_2_thumb.png" }
+    ],
+    "garden": [
+      { "id": "garden_1", "name": "シナガワ ガーデン グリーン", "path": "assets/images/frames/restaurants/garden/frame_1.png", "thumbnail": "assets/images/frames/restaurants/garden/frame_1_thumb.png" },
+      { "id": "garden_2", "name": "シナガワ ガーデン インド",   "path": "assets/images/frames/restaurants/garden/frame_2.png", "thumbnail": "assets/images/frames/restaurants/garden/frame_2_thumb.png" }
+    ]
+  }
 }

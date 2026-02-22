@@ -1,476 +1,321 @@
 /**
  * ======================================================================
  * UIモジュール (ui.js)
- * ユーザーインターフェース操作、画面遷移、パネル制御を担当
- * 
- * グローバル変数:
- * - frameImage, framesConfig, currentFrameId, messageConfig: app.jsで定義
- * - 各DOM要素: app.jsで定義
+ * 画面遷移・パネル制御・フレーム6種選択・フィルターUIを担当
  * ======================================================================
  */
 
-/**
- * 画面を切り替える
- * カメラ画面、結果画面、エラー画面の表示を制御
- * 
- * @param {string} screenName - 表示する画面名 ('camera' | 'result' | 'error')
- * @returns {void}
- */
-function showScreen(screenName) {
-    // 全ての画面を非表示
+// ======================================================================
+// 画面遷移
+// ======================================================================
+
+function showScreen(name) {
     cameraScreen.classList.remove('active');
     resultScreen.classList.remove('active');
     errorScreen.classList.remove('active');
-
-    // 指定された画面を表示
-    switch (screenName) {
-        case 'camera':
-            cameraScreen.classList.add('active');
-            break;
-        case 'result':
-            resultScreen.classList.add('active');
-            break;
-        case 'error':
-            errorScreen.classList.add('active');
-            break;
-    }
+    if (name === 'camera')  cameraScreen.classList.add('active');
+    if (name === 'result')  resultScreen.classList.add('active');
+    if (name === 'error')   errorScreen.classList.add('active');
 }
 
-/**
- * エラーメッセージを表示
- * 
- * @param {string} message - 表示するエラーメッセージ
- * @returns {void}
- */
 function showError(message) {
-    errorText.textContent = message;
+    const el = document.getElementById('error-text');
+    if (el) el.textContent = message;
     showScreen('error');
 }
 
 // ======================================================================
-// フレーム選択機能
+// フレーム設定読み込み（独自2種 + 共通4種）
 // ======================================================================
 
-/**
- * フレーム設定ファイルを読み込み
- * 
- * 処理フロー:
- * 1. assets/config/restaurants.json を読み込み
- * 2. 認証されたレストランの情報を取得
- * 3. フレームリストUIを生成（認証レストランのみ表示）
- * 4. 失敗時はデフォルトフレームを使用
- * 
- * @async
- * @returns {Promise<void>}
- */
 async function loadFramesConfig() {
     try {
-        // レストラン設定ファイルを読み込み
-        const response = await fetch('assets/config/restaurants.json');
-        const restaurantsData = await response.json();
-        
-        // 認証されたレストランIDを取得
-        const authRestaurantId = window.authRestaurantId || sessionStorage.getItem('restaurantId');
-        
-        if (authRestaurantId && restaurantsData.restaurants) {
-            // 認証されたレストランを検索
-            const authenticatedRestaurant = restaurantsData.restaurants.find(r => r.id === authRestaurantId);
-            
-            if (authenticatedRestaurant) {
-                // 認証されたレストランのみを表示
-                framesConfig = {
-                    hotelName: restaurantsData.hotelName,
-                    frames: [{
-                        id: authenticatedRestaurant.id,
-                        name: authenticatedRestaurant.name,
-                        restaurantName: authenticatedRestaurant.fullName,
-                        path: authenticatedRestaurant.framePath,
-                        thumbnail: authenticatedRestaurant.frameThumb,
-                        description: authenticatedRestaurant.description
-                    }]
-                };
-                
-                // デフォルト選択を認証レストランに設定
-                currentFrameId = authenticatedRestaurant.id;
-                
-                // フレームオーバーレイを更新
-                frameOverlay.src = authenticatedRestaurant.framePath;
-                
-                // フレームリストUIを生成
-                renderFrameList();
-            }
-        } else {
-            // 認証情報がない場合、ログイン画面にリダイレクト
-            window.location.href = 'login.html';
+        const [framesResp, restsResp] = await Promise.all([
+            fetch('assets/config/frames-config.json'),
+            fetch('assets/config/restaurants.json')
+        ]);
+        const framesData = await framesResp.json();
+        const restsData  = await restsResp.json();
+
+        const authId = sessionStorage.getItem('restaurantId');
+        if (!authId) { window.location.href = 'login.html'; return; }
+
+        // 認証レストランの情報
+        const rest = restsData.restaurants.find(r => r.id === authId);
+        if (!rest)  { window.location.href = 'login.html'; return; }
+
+        // レストラン独自フレーム2種（なければ空）
+        const ownFrames    = (framesData.restaurantFrames && framesData.restaurantFrames[authId]) || [];
+        // 共通フレーム4種
+        const commonFrames = framesData.commonFrames || [];
+
+        // 合計6種をまとめる（独自2種が先頭）
+        const allFrames = [...ownFrames, ...commonFrames];
+
+        framesConfig = { hotelName: framesData.hotelName, frames: allFrames };
+
+        // 最初のフレームをデフォルト選択
+        if (allFrames.length > 0) {
+            currentFrameId = allFrames[0].id;
+            loadFrameImage(allFrames[0].path);
+            frameOverlay.src = allFrames[0].path;
         }
-        
-    } catch (error) {
-        console.warn('Failed to load restaurants config, redirecting to login');
-        window.location.href = 'login.html';
+
+        renderFrameList();
+
+    } catch (err) {
+        console.warn('loadFramesConfig failed:', err);
+        // 設定読み込み失敗でもカメラ画面は動作させる（フレームなし状態）
+        framesConfig = { hotelName: '品川プリンスホテル', frames: [] };
+        renderFrameList();
     }
 }
 
-/**
- * フレーム選択リストUIを生成
- * 各フレームのサムネイルとクリックイベントを設定
- * 
- * HTML構造:
- * <div class="frame-item [selected]">
- *   <img src="thumbnail" alt="name">
- *   <div class="frame-item-name">name</div>
- * </div>
- * 
- * @returns {void}
- */
+/** フレーム画像を非同期でプリロード */
+function loadFrameImage(path) {
+    frameImage = null;
+    if (!path) return;
+    const img = new Image();
+    img.onload  = () => { frameImage = img; };
+    img.onerror = () => { frameImage = null; };
+    img.src = path;
+}
+
+/** フレームリスト UI を生成 */
 function renderFrameList() {
-    // 既存のフレームリストをクリア
     frameList.innerHTML = '';
-    
-    // 各フレームのアイテムを生成
-    framesConfig.frames.forEach(frame => {
-        // フレームアイテム要素を作成
-        const frameItem = document.createElement('div');
-        frameItem.className = 'frame-item';
-        
-        // 現在選択中のフレームにselectedクラスを追加
-        if (frame.id === currentFrameId) {
-            frameItem.classList.add('selected');
+    if (!framesConfig || !framesConfig.frames || framesConfig.frames.length === 0) {
+        frameList.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px">フレームが見つかりません</p>';
+        return;
+    }
+
+    // 独自フレーム（先頭2件）と共通フレーム（残り4件）を視覚的に分ける
+    const ownCount = Math.min(2, framesConfig.frames.filter(f => !f.id.startsWith('common')).length);
+
+    framesConfig.frames.forEach((frame, idx) => {
+        if (idx === ownCount && ownCount > 0) {
+            const sep = document.createElement('div');
+            sep.className = 'frame-list-sep';
+            sep.textContent = '── 共通フレーム ──';
+            frameList.appendChild(sep);
         }
-        
-        // サムネイル画像とフレーム名を設定
-        // onerror: サムネイルが無い場合はフルサイズ画像を表示
-        frameItem.innerHTML = `
-            <img src="${frame.thumbnail}" alt="${frame.name}" onerror="this.src='${frame.path}'">
+
+        const item = document.createElement('div');
+        item.className = 'frame-item' + (frame.id === currentFrameId ? ' selected' : '');
+        item.dataset.frameId = frame.id;
+
+        const thumbSrc = frame.thumbnail || frame.path;
+        item.innerHTML = `
+            <img src="${thumbSrc}" alt="${frame.name}"
+                 onerror="this.style.background='#2c3e50';this.alt='${frame.name}'">
             <div class="frame-item-name">${frame.name}</div>
         `;
-        
-        // クリックイベントを設定
-        frameItem.addEventListener('click', () => {
-            selectFrame(frame.id);
-        });
-        
-        // フレームリストに追加
-        frameList.appendChild(frameItem);
+        item.addEventListener('click', () => selectFrame(frame.id));
+        frameList.appendChild(item);
     });
 }
 
-/**
- * フレームを選択
- * 
- * 処理内容:
- * 1. 選択フレームIDを更新
- * 2. フレーム画像を読み込み
- * 3. オーバーレイ画像を切り替え
- * 4. 選択状態のUIを更新
- * 5. フレーム選択パネルを閉じる
- * 
- * @param {string} frameId - 選択するフレームのID
- * @returns {void}
- */
+/** フレームを選択して適用 */
 function selectFrame(frameId) {
-    // 現在選択中のフレームIDを更新
     currentFrameId = frameId;
-    
-    // フレーム情報を取得
     const frame = framesConfig.frames.find(f => f.id === frameId);
-    
     if (frame) {
-        // オーバーレイ画像を切り替え
         frameOverlay.src = frame.path;
-        
-        // プリロード用の画像オブジェクトを作成
-        frameImage = new Image();
-        frameImage.src = frame.path;
-        
-        // 全フレームアイテムからselectedクラスを削除
-        document.querySelectorAll('.frame-item').forEach(item => {
-            item.classList.remove('selected');
+        loadFrameImage(frame.path);
+        document.querySelectorAll('.frame-item').forEach(el => {
+            el.classList.toggle('selected', el.dataset.frameId === frameId);
         });
-        
-        // 選択したフレームにselectedクラスを追加
-        const selectedItem = Array.from(frameList.children).find((item, index) => {
-            return framesConfig.frames[index].id === frameId;
-        });
-        
-        if (selectedItem) {
-            selectedItem.classList.add('selected');
-        }
     }
-    
-    // フレーム選択パネルを閉じる
     closeFrameSelector();
 }
 
-/**
- * フレーム選択パネルを開く
- * スライドアップアニメーションで表示
- * 
- * @returns {void}
- */
-function openFrameSelector() {
-    frameSelector.classList.add('active');
-    frameSelector.classList.remove('hidden');
-}
-
-/**
- * フレーム選択パネルを閉じる
- * スライドダウンアニメーションで非表示
- * 
- * @returns {void}
- */
+function openFrameSelector()  { frameSelector.classList.add('active'); frameSelector.classList.remove('hidden'); }
 function closeFrameSelector() {
     frameSelector.classList.remove('active');
-    
-    // アニメーション完了後に完全に非表示
-    setTimeout(() => {
-        frameSelector.classList.add('hidden');
-    }, 300);  // CSS transitionの時間と同期
+    setTimeout(() => frameSelector.classList.add('hidden'), 350);
 }
 
 // ======================================================================
-// メッセージ編集機能
+// メッセージ編集
 // ======================================================================
 
-/**
- * カメラヘッダータイトルを更新
- * レストラン名をヘッダーに表示
- * 
- * @returns {void}
- */
 function updateCameraHeader() {
-    const restaurantName = window.authRestaurantName || sessionStorage.getItem('restaurantName');
-    if (restaurantName && cameraHeaderTitle) {
-        // ロゴ下のレストラン名サブテキストのみ更新（ホテル名はロゴ画像で表示）
-        cameraHeaderTitle.textContent = restaurantName;
-    }
+    const name = sessionStorage.getItem('restaurantName');
+    if (name && cameraHeaderTitle) cameraHeaderTitle.textContent = name;
 }
 
-/**
- * プレビューガイドを更新
- * 現在のメッセージ設定に基づいてプレビューガイドテキストを更新
- * 
- * @returns {void}
- */
 function updatePreviewGuide() {
     if (!previewGuideText) return;
-    
+    const cfg = (typeof messageConfig !== 'undefined') ? messageConfig : null;
+    if (!cfg) return;
+
     const lines = [];
-    
-    // 日付が有効な場合
-    if (messageConfig.date.enabled && messageConfig.date.value) {
-        const dateObj = new Date(messageConfig.date.value);
-        const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-        lines.push(`📅 ${formattedDate}`);
+    if (cfg.date.enabled && cfg.date.value) {
+        const d = new Date(cfg.date.value);
+        if (!isNaN(d)) lines.push(`📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`);
     }
-    
-    // メッセージが有効な場合
-    if (messageConfig.text.enabled && messageConfig.text.value) {
-        lines.push(`💐 ${messageConfig.text.value}`);
-    }
-    
-    // 場所が有効な場合
-    if (messageConfig.location.enabled && messageConfig.location.value) {
-        lines.push(`📍 ${messageConfig.location.value}`);
-    }
-    
-    // すべて無効な場合のデフォルトメッセージ
-    if (lines.length === 0) {
-        lines.push('フレーム内に収まるように調整してください');
-    }
-    
-    // HTMLとして設定（改行を<br>に変換）
-    previewGuideText.innerHTML = lines.join('<br>');
+    if (cfg.text.enabled     && cfg.text.value)     lines.push(`💐 ${cfg.text.value}`);
+    if (cfg.location.enabled && cfg.location.value) lines.push(`📍 ${cfg.location.value}`);
+
+    previewGuideText.innerHTML = lines.length
+        ? lines.join('<br>')
+        : 'フレーム内に収まるよう調整してください';
 }
 
-/**
- * メッセージ編集パネルを開く
- * スライドアップアニメーションで表示
- * 
- * @returns {void}
- */
-function openMessageEditor() {
-    messageEditor.classList.add('active');
-    messageEditor.classList.remove('hidden');
+function applyMessageSettings() {
+    messageConfig.date.enabled     = messageDateEnableCheckbox.checked;
+    messageConfig.date.value       = messageDateInput.value;
+    messageConfig.text.enabled     = messageTextEnableCheckbox.checked;
+    messageConfig.text.value       = messageTextInput.value;
+    messageConfig.location.enabled = messageLocationEnableCheckbox.checked;
+    messageConfig.location.value   = messageLocationInput.value;
+    updatePreviewGuide();
+    closeMessageEditor();
 }
 
-/**
- * メッセージ編集パネルを閉じる
- * スライドダウンアニメーションで非表示
- * 
- * @returns {void}
- */
+function openMessageEditor()  { messageEditor.classList.add('active'); messageEditor.classList.remove('hidden'); }
 function closeMessageEditor() {
     messageEditor.classList.remove('active');
-    
-    // アニメーション完了後に完全に非表示
-    setTimeout(() => {
-        messageEditor.classList.add('hidden');
-    }, 300);  // CSS transitionの時間と同期
+    setTimeout(() => messageEditor.classList.add('hidden'), 350);
 }
 
-/**
- * メッセージ設定を適用
- * 
- * 処理内容:
- * 1. フォームから入力値を取得
- * 2. messageConfigオブジェクトを更新
- * 3. メッセージ編集パネルを閉じる
- * 
- * 更新される設定:
- * - date.enabled: 日付表示の有効/無効
- * - date.value: 記念日の日付
- * - text.enabled: メッセージ表示の有効/無効
- * - text.value: メインメッセージ
- * - location.enabled: 場所表示の有効/無効
- * - location.value: 場所名
- * 
- * @returns {void}
- */
-function applyMessageSettings() {
-    // 各入力フィールドから値を取得してmessageConfigを更新
-    messageConfig.date.enabled = messageDateEnableCheckbox.checked;
-    messageConfig.date.value = messageDateInput.value;
-    
-    messageConfig.text.enabled = messageTextEnableCheckbox.checked;
-    messageConfig.text.value = messageTextInput.value;
-    
-    messageConfig.location.enabled = messageLocationEnableCheckbox.checked;
-    messageConfig.location.value = messageLocationInput.value;
-    
-    // プレビューガイドを更新
-    updatePreviewGuide();
-    
-    // メッセージ編集パネルを閉じる
-    closeMessageEditor();
+// ======================================================================
+// フィルターパネル
+// ======================================================================
+
+function openFilterSelector()  { filterSelector.classList.add('active'); filterSelector.classList.remove('hidden'); }
+function closeFilterSelector() {
+    filterSelector.classList.remove('active');
+    setTimeout(() => filterSelector.classList.add('hidden'), 350);
+}
+
+// ======================================================================
+// 顔 AR フィルターパネル
+// ======================================================================
+
+function openFaceFilterSelector()  { faceFilterSelector.classList.add('active'); faceFilterSelector.classList.remove('hidden'); }
+function closeFaceFilterSelector() {
+    faceFilterSelector.classList.remove('active');
+    setTimeout(() => faceFilterSelector.classList.add('hidden'), 350);
 }
 
 // ======================================================================
 // イベントリスナー登録
 // ======================================================================
 
-// 撮影ボタン
+// --- パネル外タップで閉じる（オーバーレイ） ---
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'panel-overlay') {
+        closeFrameSelector();
+        closeMessageEditor();
+        closeFilterSelector();
+        closeFaceFilterSelector();
+        hidePanelOverlay();
+    }
+});
+
+function showPanelOverlay() {
+    const ov = document.getElementById('panel-overlay');
+    if (ov) ov.classList.add('active');
+}
+function hidePanelOverlay() {
+    const ov = document.getElementById('panel-overlay');
+    if (ov) ov.classList.remove('active');
+}
+
+// --- フレーム選択 ---
+frameSelectToggle.addEventListener('click', () => {
+    openFrameSelector();
+    showPanelOverlay();
+});
+
+document.getElementById('frame-selector-close')?.addEventListener('click', () => {
+    closeFrameSelector(); hidePanelOverlay();
+});
+
+// --- メッセージ編集 ---
+messageToggle.addEventListener('click', () => {
+    openMessageEditor();
+    showPanelOverlay();
+});
+
+document.getElementById('message-editor-close')?.addEventListener('click', () => {
+    closeMessageEditor(); hidePanelOverlay();
+});
+
+document.getElementById('message-apply')?.addEventListener('click', applyMessageSettings);
+
+document.getElementById('location-edit-btn')?.addEventListener('click', () => {
+    if (messageLocationInput.readOnly) {
+        messageLocationInput.readOnly = false;
+        messageLocationInput.classList.remove('location-readonly');
+        document.getElementById('location-edit-btn').textContent = '固定';
+    } else {
+        messageLocationInput.readOnly = true;
+        messageLocationInput.classList.add('location-readonly');
+        document.getElementById('location-edit-btn').textContent = '編集';
+    }
+});
+
+// リアルタイムプレビュー更新
+[
+    [messageDateInput,          () => { messageConfig.date.value     = messageDateInput.value;          updatePreviewGuide(); }],
+    [messageTextInput,          () => { messageConfig.text.value     = messageTextInput.value;           updatePreviewGuide(); }],
+    [messageLocationInput,      () => { messageConfig.location.value = messageLocationInput.value;       updatePreviewGuide(); }],
+    [messageDateEnableCheckbox, () => { messageConfig.date.enabled     = messageDateEnableCheckbox.checked;  updatePreviewGuide(); }],
+    [messageTextEnableCheckbox, () => { messageConfig.text.enabled     = messageTextEnableCheckbox.checked;  updatePreviewGuide(); }],
+    [messageLocationEnableCheckbox, () => { messageConfig.location.enabled = messageLocationEnableCheckbox.checked; updatePreviewGuide(); }]
+].forEach(([el, fn]) => { if (el) el.addEventListener('change', fn); if (el && el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'date') el.addEventListener('input', fn); });
+
+// --- 写真フィルター ---
+document.getElementById('filter-toggle')?.addEventListener('click', () => {
+    openFilterSelector();
+    showPanelOverlay();
+    if (typeof buildFilterUI === 'function') buildFilterUI();
+});
+
+document.getElementById('filter-selector-close')?.addEventListener('click', () => {
+    closeFilterSelector(); hidePanelOverlay();
+});
+
+// --- 顔 AR フィルター ---
+document.getElementById('face-filter-toggle')?.addEventListener('click', () => {
+    openFaceFilterSelector();
+    showPanelOverlay();
+    if (typeof buildFaceFilterUI === 'function') buildFaceFilterUI();
+});
+
+document.getElementById('face-filter-selector-close')?.addEventListener('click', () => {
+    closeFaceFilterSelector(); hidePanelOverlay();
+});
+
+// --- 撮影ボタン ---
 captureBtn.addEventListener('click', () => {
+    if (typeof initAudioContext === 'function') initAudioContext(); // iOS: ユーザー操作で AudioContext 解放
     startCountdown();
 });
 
-// カメラ切り替えボタン（インカメラ ↔ アウトカメラ）
-switchCameraBtn.addEventListener('click', () => {
-    switchCamera();
-});
+// --- カメラ切り替え ---
+switchCameraBtn?.addEventListener('click', switchCamera);
 
-// 再撮影ボタン
-retakeBtn.addEventListener('click', () => {
-    retake();
-});
-
-// 保存ボタン
-downloadBtn.addEventListener('click', () => {
-    downloadImage();
-});
-
-// 再試行ボタン（エラー画面）
-retryBtn.addEventListener('click', () => {
-    initCamera();
-});
-
-// フレームオーバーレイ画像の読み込み完了
-frameOverlay.addEventListener('load', () => {
-    // プリロード用の画像オブジェクトを作成
-    frameImage = new Image();
-    frameImage.src = frameOverlay.src;
-});
-
-// フレームオーバーレイ画像の読み込み失敗
-frameOverlay.addEventListener('error', () => {
-    console.warn('Frame image failed to load, continuing without frame');
-});
-
-// フレーム選択トグルボタン
-frameSelectToggle.addEventListener('click', () => {
-    openFrameSelector();
-});
-
-// フレーム選択パネルの閉じるボタン
-frameSelectorClose.addEventListener('click', () => {
-    closeFrameSelector();
-});
-
-// メッセージ編集トグルボタン
-messageToggle.addEventListener('click', () => {
-    openMessageEditor();
-});
-
-// メッセージ編集パネルの閉じるボタン
-messageEditorClose.addEventListener('click', () => {
-    closeMessageEditor();
-});
-
-// メッセージ適用ボタン
-messageApplyBtn.addEventListener('click', () => {
-    applyMessageSettings();
-});
-
-// 場所編集ボタン
-editLocationBtn.addEventListener('click', () => {
-    if (messageLocationInput.hasAttribute('readonly')) {
-        // 読み取り専用を解除して編集可能にする
-        messageLocationInput.removeAttribute('readonly');
-        messageLocationInput.classList.remove('location-readonly');
-        messageLocationInput.focus();
-        editLocationBtn.textContent = '固定';
-    } else {
-        // 読み取り専用に戻す
-        messageLocationInput.setAttribute('readonly', 'readonly');
-        messageLocationInput.classList.add('location-readonly');
-        editLocationBtn.textContent = '編集';
+// --- 再撮影 ---
+document.getElementById('retake-btn')?.addEventListener('click', () => {
+    showScreen('camera');
+    if (typeof stopFaceLoop === 'function' && typeof faceFilterActive !== 'undefined' && faceFilterActive) {
+        // 顔フィルターループを再開
+        faceFilterActive = true;
+        startFaceLoop();
     }
 });
 
-// ログアウトボタン
-logoutBtn.addEventListener('click', () => {
-    // 確認ダイアログ
-    if (confirm('ログアウトしますか？')) {
-        // セッションストレージをクリア
-        sessionStorage.removeItem('authenticated');
-        sessionStorage.removeItem('restaurantId');
-        sessionStorage.removeItem('restaurantName');
-        
-        // カメラストリームを停止
-        stopCamera();
-        
-        // ログイン画面にリダイレクト
-        window.location.href = 'login.html';
-    }
-});
+// --- 保存 ---
+document.getElementById('download-btn')?.addEventListener('click', downloadImage);
 
-// メッセージ入力欄の変更時にリアルタイムでプレビューを更新
-messageDateInput.addEventListener('change', () => {
-    messageConfig.date.value = messageDateInput.value;
-    updatePreviewGuide();
-});
-
-messageTextInput.addEventListener('input', () => {
-    messageConfig.text.value = messageTextInput.value;
-    updatePreviewGuide();
-});
-
-messageLocationInput.addEventListener('input', () => {
-    messageConfig.location.value = messageLocationInput.value;
-    updatePreviewGuide();
-});
-
-// チェックボックスの変更時にリアルタイムでプレビューを更新
-messageDateEnableCheckbox.addEventListener('change', () => {
-    messageConfig.date.enabled = messageDateEnableCheckbox.checked;
-    updatePreviewGuide();
-});
-
-messageTextEnableCheckbox.addEventListener('change', () => {
-    messageConfig.text.enabled = messageTextEnableCheckbox.checked;
-    updatePreviewGuide();
-});
-
-messageLocationEnableCheckbox.addEventListener('change', () => {
-    messageConfig.location.enabled = messageLocationEnableCheckbox.checked;
-    updatePreviewGuide();
+// --- ログアウト ---
+logoutBtn?.addEventListener('click', () => {
+    if (!confirm('ログアウトしますか？')) return;
+    sessionStorage.clear();
+    stopCamera();
+    if (typeof stopFaceLoop === 'function') stopFaceLoop();
+    window.location.href = 'login.html';
 });
