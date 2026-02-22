@@ -59,7 +59,8 @@
         <!-- ビデオコンテナ（4:3） -->
         <div id="video-container">
             <video id="camera-video" autoplay playsinline></video>
-            <img  id="frame-overlay" src="" alt="Frame">
+            <img  id="frame-overlay" src="" alt="Frame"
+                  onerror="this.onerror=null;this.style.opacity='0'">
             <!-- 顔AR描画用 Canvas（video の上・frame の下） -->
             <canvas id="face-filter-canvas"></canvas>
             <!-- メッセージプレビューガイド -->

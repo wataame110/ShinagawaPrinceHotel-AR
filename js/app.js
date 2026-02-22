@@ -189,9 +189,9 @@ window.addEventListener('load', async () => {
     // 写真フィルターUIを構築
     if (typeof buildFilterUI === 'function') buildFilterUI();
     
-    // 顔ARフィルターを初期化（MediaPipe CDN 読み込み後）
+    // 顔ARフィルターを初期化（loadイベント完了後のため直接呼び出し）
     if (typeof initFaceFilter === 'function') {
-        window.addEventListener('load', () => initFaceFilter(), { once: true });
+        initFaceFilter();
     }
     
     // カメラを初期化

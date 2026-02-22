@@ -66,7 +66,8 @@ function captureImage() {
         const canvas = document.createElement('canvas');
         canvas.width  = outW;
         canvas.height = outH;
-        const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
+        // alpha: true（デフォルト）にしないと透過PNGフレームが正常に合成されない
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
@@ -111,7 +112,7 @@ function captureImage() {
         // ---- 結果 Canvas に転写 ----
         resultCanvas.width  = outW;
         resultCanvas.height = outH;
-        const rCtx = resultCanvas.getContext('2d', { alpha: false });
+        const rCtx = resultCanvas.getContext('2d');
         rCtx.drawImage(canvas, 0, 0);
 
         // ---- 撮影音を鳴らす ----

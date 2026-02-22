@@ -75,9 +75,11 @@ async function loadFramesConfig() {
 function loadFrameImage(path) {
     frameImage = null;
     if (!path) return;
+    // フレームオーバーレイを表示に戻す
+    if (frameOverlay) frameOverlay.style.opacity = '1';
     const img = new Image();
     img.onload  = () => { frameImage = img; };
-    img.onerror = () => { frameImage = null; };
+    img.onerror = () => { frameImage = null; if (frameOverlay) frameOverlay.style.opacity = '0'; };
     img.src = path;
 }
 
@@ -104,10 +106,10 @@ function renderFrameList() {
         item.className = 'frame-item' + (frame.id === currentFrameId ? ' selected' : '');
         item.dataset.frameId = frame.id;
 
-        const thumbSrc = frame.thumbnail || frame.path;
+        const thumbSrc = frame.thumbnail || frame.path || 'assets/images/frames/frame-placeholder.png';
         item.innerHTML = `
             <img src="${thumbSrc}" alt="${frame.name}"
-                 onerror="this.style.background='#2c3e50';this.alt='${frame.name}'">
+                 onerror="this.onerror=null;this.src='assets/images/frames/frame-placeholder.png'">
             <div class="frame-item-name">${frame.name}</div>
         `;
         item.addEventListener('click', () => selectFrame(frame.id));
@@ -245,15 +247,15 @@ document.getElementById('message-editor-close')?.addEventListener('click', () =>
 
 document.getElementById('message-apply')?.addEventListener('click', applyMessageSettings);
 
-document.getElementById('location-edit-btn')?.addEventListener('click', () => {
+document.getElementById('edit-location-btn')?.addEventListener('click', () => {
     if (messageLocationInput.readOnly) {
         messageLocationInput.readOnly = false;
         messageLocationInput.classList.remove('location-readonly');
-        document.getElementById('location-edit-btn').textContent = '固定';
+        document.getElementById('edit-location-btn').textContent = '固定';
     } else {
         messageLocationInput.readOnly = true;
         messageLocationInput.classList.add('location-readonly');
-        document.getElementById('location-edit-btn').textContent = '編集';
+        document.getElementById('edit-location-btn').textContent = '編集';
     }
 });
 
