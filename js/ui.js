@@ -49,16 +49,20 @@ async function loadFramesConfig() {
         // 共通フレーム4種
         const commonFrames = framesData.commonFrames || [];
 
-        // 合計6種をまとめる（独自2種が先頭）
-        const allFrames = [...ownFrames, ...commonFrames];
+        // 合計6種をまとめる（独自2種が先頭）、先頭に「なし」を追加
+        const NO_FRAME = { id: 'no_frame', name: 'なし', path: null, thumbnail: null, isNone: true };
+        const allFrames = [NO_FRAME, ...ownFrames, ...commonFrames];
 
         framesConfig = { hotelName: framesData.hotelName, frames: allFrames };
 
-        // 最初のフレームをデフォルト選択
-        if (allFrames.length > 0) {
-            currentFrameId = allFrames[0].id;
-            loadFrameImage(allFrames[0].path);
-            frameOverlay.src = allFrames[0].path;
+        // デフォルト：独自フレームがあればその1枚目、なければ共通1枚目（"なし"はデフォルト選択しない）
+        const defaultFrame = ownFrames[0] || commonFrames[0] || null;
+        if (defaultFrame) {
+            currentFrameId = defaultFrame.id;
+            loadFrameImage(defaultFrame.path);
+            if (frameOverlay) frameOverlay.src = defaultFrame.path;
+        } else {
+            currentFrameId = 'no_frame';
         }
 
         renderFrameList();
@@ -91,11 +95,15 @@ function renderFrameList() {
         return;
     }
 
-    // 独自フレーム（先頭2件）と共通フレーム（残り4件）を視覚的に分ける
-    const ownCount = Math.min(2, framesConfig.frames.filter(f => !f.id.startsWith('common')).length);
+    // 独自フレーム（先頭2件、"なし"を除く）と共通フレームを視覚的に分ける
+    const ownCount = Math.min(2, framesConfig.frames.filter(f => !f.id.startsWith('common') && !f.isNone).length);
+    // "なし"が先頭にある分、区切り位置を +1
+    const hasNone  = framesConfig.frames.length > 0 && framesConfig.frames[0].isNone;
+    const sepIdx   = hasNone ? ownCount + 1 : ownCount;
 
     framesConfig.frames.forEach((frame, idx) => {
-        if (idx === ownCount && ownCount > 0) {
+        // 区切り線（独自→共通フレーム）
+        if (idx === sepIdx && ownCount > 0) {
             const sep = document.createElement('div');
             sep.className = 'frame-list-sep';
             sep.textContent = '── 共通フレーム ──';
@@ -106,12 +114,23 @@ function renderFrameList() {
         item.className = 'frame-item' + (frame.id === currentFrameId ? ' selected' : '');
         item.dataset.frameId = frame.id;
 
-        const thumbSrc = frame.thumbnail || frame.path || 'assets/images/frames/frame-placeholder.png';
-        item.innerHTML = `
-            <img src="${thumbSrc}" alt="${frame.name}"
-                 onerror="this.onerror=null;this.src='assets/images/frames/frame-placeholder.png'">
-            <div class="frame-item-name">${frame.name}</div>
-        `;
+        if (frame.isNone) {
+            // 「なし」専用の表示
+            item.innerHTML = `
+                <div class="frame-item-none">
+                    <span class="frame-none-icon">✕</span>
+                    <span class="frame-none-label">フレームなし</span>
+                </div>
+                <div class="frame-item-name">${frame.name}</div>
+            `;
+        } else {
+            const thumbSrc = frame.thumbnail || frame.path || 'assets/images/frames/frame-placeholder.png';
+            item.innerHTML = `
+                <img src="${thumbSrc}" alt="${frame.name}"
+                     onerror="this.onerror=null;this.src='assets/images/frames/frame-placeholder.png'">
+                <div class="frame-item-name">${frame.name}</div>
+            `;
+        }
         item.addEventListener('click', () => selectFrame(frame.id));
         frameList.appendChild(item);
     });
@@ -121,13 +140,21 @@ function renderFrameList() {
 function selectFrame(frameId) {
     currentFrameId = frameId;
     const frame = framesConfig.frames.find(f => f.id === frameId);
-    if (frame) {
-        frameOverlay.src = frame.path;
+    if (!frame) return;
+
+    if (frame.isNone) {
+        // 「なし」: フレームオーバーレイを非表示にして frameImage を null に
+        frameImage = null;
+        if (frameOverlay) { frameOverlay.src = ''; frameOverlay.style.opacity = '0'; }
+    } else {
+        if (frameOverlay) frameOverlay.style.opacity = '1';
+        frameOverlay.src = frame.path || '';
         loadFrameImage(frame.path);
-        document.querySelectorAll('.frame-item').forEach(el => {
-            el.classList.toggle('selected', el.dataset.frameId === frameId);
-        });
     }
+
+    document.querySelectorAll('.frame-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.frameId === frameId);
+    });
     closeFrameSelector();
 }
 
