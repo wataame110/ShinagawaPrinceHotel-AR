@@ -7,7 +7,7 @@
       "id": "common_anniversary",
       "name": "記念日ゴールド",
       "path": "assets/images/frames/frame1.png",
-      "thumbnail": "assets/images/frames/frame1-thumb.png",
+      "thumbnail": "assets/images/frames/frame1-happy.png",
       "description": "金の装飾が輝く記念日フレーム"
     },
     {
@@ -39,7 +39,7 @@
       { "id": "table9_2", "name": "TABLE9 ナイト",  "path": "assets/images/frames/frame-placeholder.png", "thumbnail": "assets/images/frames/frame-placeholder.png" }
     ],
     "hapuna": [
-      { "id": "hapuna_1", "name": "ハプナ ラグジュアリー", "path": "assets/images/frames/frame1.png", "thumbnail": "assets/images/frames/frame1-thumb.png" },
+      { "id": "hapuna_1", "name": "ハプナ ラグジュアリー", "path": "assets/images/frames/frame1.png", "thumbnail": "assets/images/frames/frame1-happy.png" },
       { "id": "hapuna_2", "name": "ハプナ ナチュラル",    "path": "assets/images/frames/frame2.png", "thumbnail": "assets/images/frames/frame2-thumb.png" }
     ],
     "gojusantsugi": [
