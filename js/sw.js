@@ -28,11 +28,11 @@ const urlsToCache = [
     './js/ui.js',
     './js/sw.js',
     './assets/config/frames-config.json',
-    './assets/images/frames/frame1.png',
+    './assets/images/frames/frame1-happy.png',
     './assets/images/frames/frame2.png',
     './assets/images/frames/frame3.png',
     './assets/images/frames/frame4.png',
-    './assets/images/frames/frame1-thumb.png',
+    './assets/images/frames/frame1-happy.png',
     './assets/images/frames/frame2-thumb.png',
     './assets/images/frames/frame3-thumb.png',
     './assets/images/frames/frame4-thumb.png'

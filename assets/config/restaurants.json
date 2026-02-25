@@ -18,8 +18,8 @@
       "category": "ビュッフェ",
       "description": "大人向けブッフェレストラン。和洋中の多彩な料理をライブキッチン等で提供",
       "password": "hapuna2026",
-      "framePath": "assets/images/frames/frame1.png",
-      "frameThumb": "assets/images/frames/frame1-thumb.png"
+      "framePath": "assets/images/frames/frame1-happy.png",
+      "frameThumb": "assets/images/frames/frame1-happy.png"
     },
     {
       "id": "gojusantsugi",

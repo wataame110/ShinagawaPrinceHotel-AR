@@ -9,12 +9,12 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "assets/images/frames/frame1-thumb.png",
+      "src": "assets/images/frames/frame1-happy.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "assets/images/frames/frame1.png",
+      "src": "assets/images/frames/frame1-happy.png",
       "sizes": "512x512",
       "type": "image/png"
     }

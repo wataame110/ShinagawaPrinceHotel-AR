@@ -164,8 +164,8 @@ https://example.com/?restaurant=pinfan    # 品芳専用
       "id": "hapuna",                                    // 一意のID（英数字）
       "name": "ハプナ",                                  // 短縮名（ファイル名に使用）
       "restaurantName": "メインダイニング ハプナ",        // 表示用正式名称
-      "path": "assets/images/frames/frame1.png",        // フルサイズ画像パス
-      "thumbnail": "assets/images/frames/frame1-thumb.png",  // サムネイルパス
+      "path": "assets/images/frames/frame1-happy.png",        // フルサイズ画像パス
+      "thumbnail": "assets/images/frames/frame1-happy.png",  // サムネイルパス
       "description": "洗練された空間で味わう本格料理"    // 説明文（将来使用）
     }
   ]
