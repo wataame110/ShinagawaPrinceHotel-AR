@@ -634,9 +634,9 @@ body {
 .frame-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 10px;
+    gap: 15px;
     overflow-y: auto;
-    flex: auto;
+    flex: 1040px;
     min-height: 0;
     padding: 1px 1px
     -webkit-overflow-scrolling: touch;
