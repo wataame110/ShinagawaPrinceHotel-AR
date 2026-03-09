@@ -604,7 +604,7 @@ body {
 
 .frame-selector-header h3 {
     color: var(--color-gold-primary);
-    font-size: 16px;
+    font-size: 10px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
@@ -634,7 +634,7 @@ body {
 .frame-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 8px;
+    gap: 32px;
     overflow-y: auto;
     flex: 1;
     min-height: 0;
@@ -909,7 +909,7 @@ body {
 
     .frame-list {
         grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
+        gap: 24px;
     }
 
     #result-controls {
@@ -952,7 +952,7 @@ body {
 @media (min-width: 600px) {
     .frame-list {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 10px;
+        gap: 40px;
     }
 
     .frame-selector {
