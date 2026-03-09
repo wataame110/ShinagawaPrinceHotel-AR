@@ -634,11 +634,11 @@ body {
 .frame-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 8px;
+    gap: 10px;
     overflow-y: auto;
     flex: 1;
     min-height: 0;
-    padding: 4px 2px;
+    padding: 5px 10px
     -webkit-overflow-scrolling: touch;
 }
 
