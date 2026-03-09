@@ -21,7 +21,7 @@
     --font-luxury: 'Times New Roman', 'Noto Serif JP', serif;
     --font-modern: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
     --header-height: 54px;
-    --controls-height: 72px;
+    --controls-height: 80px;
 }
 
 /* ======================================================================
@@ -233,7 +233,8 @@ body {
 #camera-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #000;
 }
 
 /* 顔ARフィルター描画用 Canvas（video の上・frame の下） */
@@ -296,7 +297,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
     background: rgba(26, 35, 50, 0.95);
     border-top: 1px solid rgba(212, 175, 55, 0.2);
     padding: 0 20px;
@@ -304,13 +305,13 @@ body {
 
 /* カメラ切り替えボタン */
 .btn-switch-camera {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: rgba(212, 175, 55, 0.12);
     border: 2px solid rgba(212, 175, 55, 0.6);
     color: var(--color-gold-primary);
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -633,16 +634,24 @@ body {
 
 /* フレームリスト */
 .frame-list {
-    /* flex: 1 で bottom-panel 内の残りスペースをすべて使用 */
+    /* セクション構造: フレックスカラムでセパレーター + グリッドを積み重ねる */
     flex: 1;
     min-height: 0;
-    display: grid;
-    /* 4列固定: 375px端末で (375-32-30)/4 ≈ 78px/列 */
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     overflow-y: auto;
     padding: 4px 2px 4px 2px;
-    align-content: start;
+}
+
+/* セクション内の実グリッド */
+.frame-section-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px 8px;
+    padding-bottom: 12px;
+    align-items: start;
+    width: 100%;
 }
 
 .frame-list::-webkit-scrollbar {
@@ -945,6 +954,7 @@ body {
     max-height: 60vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-top: 2px solid var(--color-gold-primary);
@@ -1004,7 +1014,8 @@ body {
 
 /* フレームリスト区切り線 */
 .frame-list-sep {
-    grid-column: 1 / -1;
+    width: 100%;
+    flex-shrink: 0;
     text-align: center;
     color: rgba(212, 175, 55, 0.6);
     font-size: 11px;
@@ -1326,7 +1337,7 @@ body {
         flex-direction: row !important;
     }
 
-    #camera-header {
+    .camera-header {
         position: absolute;
         top: 0;
         left: 0;
@@ -1363,7 +1374,7 @@ body {
         font-size: 28px !important;
     }
 
-    .camera-switch-btn {
+    .btn-switch-camera {
         width: 42px !important;
         height: 42px !important;
         font-size: 18px !important;

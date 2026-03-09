@@ -109,41 +109,30 @@ function renderFrameList() {
         return;
     }
 
-    // 独自フレーム（先頭2件、"なし"を除く）と共通フレームを視覚的に分ける
-    const ownCount = Math.min(2, framesConfig.frames.filter(f => !f.id.startsWith('common') && !f.isNone).length);
-    // "なし"が先頭にある分、区切り位置を +1
-    const hasNone  = framesConfig.frames.length > 0 && framesConfig.frames[0].isNone;
-    const sepIdx   = hasNone ? ownCount + 1 : ownCount;
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ja';
+    const t    = (typeof I18N !== 'undefined' && I18N[lang]) ? I18N[lang] : {};
 
-    framesConfig.frames.forEach((frame, idx) => {
-        // セクション区切り（なし→レストラン独自）
-        if (idx === 1 && hasNone && ownCount > 0) {
-            const sep = document.createElement('div');
-            sep.className = 'frame-list-sep';
-            sep.textContent = '── レストランオリジナル ──';
-            frameList.appendChild(sep);
-        }
-        // 区切り線（独自→共通フレーム）
-        if (idx === sepIdx && ownCount > 0) {
-            const sep = document.createElement('div');
-            sep.className = 'frame-list-sep';
-            sep.textContent = '── 共通フレーム ──';
-            frameList.appendChild(sep);
-        }
+    // フレームを 3 グループに分類
+    const noneFrames   = framesConfig.frames.filter(f =>  f.isNone);
+    const ownFrames    = framesConfig.frames.filter(f => !f.isNone && !f.id.startsWith('common'));
+    const commonFrames = framesConfig.frames.filter(f => !f.isNone &&  f.id.startsWith('common'));
 
+    const ownLabel    = t.frame_section_own    || 'レストランオリジナル';
+    const commonLabel = t.frame_section_common || '共通フレーム';
+
+    /** フレームアイテム DOM を生成 */
+    function buildItem(frame) {
         const item = document.createElement('div');
         item.className = 'frame-item' + (frame.id === currentFrameId ? ' selected' : '');
         item.dataset.frameId = frame.id;
 
-        // 仮フレーム（placeholder）か判定
         const isPlaceholder = frame.path && frame.path.includes('placeholder_');
 
         if (frame.isNone) {
-            // 「なし」専用の表示
             item.innerHTML = `
                 <div class="frame-item-none">
                     <span class="frame-none-icon">✕</span>
-                    <span class="frame-none-label">フレームなし</span>
+                    <span class="frame-none-label">${t.frame_none || 'フレームなし'}</span>
                 </div>
                 <div class="frame-item-name">${frame.name}</div>
             `;
@@ -159,8 +148,32 @@ function renderFrameList() {
             `;
         }
         item.addEventListener('click', () => selectFrame(frame.id));
-        frameList.appendChild(item);
-    });
+        return item;
+    }
+
+    /** セクションを描画するヘルパー */
+    function appendSection(label, frames) {
+        if (frames.length === 0) return;
+
+        if (label) {
+            const sep = document.createElement('div');
+            sep.className = 'frame-list-sep';
+            sep.textContent = `── ${label} ──`;
+            frameList.appendChild(sep);
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'frame-section-grid';
+        frames.forEach(f => grid.appendChild(buildItem(f)));
+        frameList.appendChild(grid);
+    }
+
+    // 「なし」+ レストランオリジナルを同じセクションに（空白セル削減）
+    const firstGroup = [...noneFrames, ...ownFrames];
+    const firstLabel = ownFrames.length > 0 ? ownLabel : null;
+
+    appendSection(firstLabel, firstGroup);          // なし + レストランオリジナル
+    appendSection(commonLabel, commonFrames);        // 共通フレーム
 }
 
 /** フレームを選択して適用 */

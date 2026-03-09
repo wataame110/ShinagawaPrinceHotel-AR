@@ -67,12 +67,14 @@ const I18N_TRANSLATIONS = {
         // フィルター / デコレーション
         filter_panel_title: '写真フィルター',
         face_ar_title:      'Face AR デコレーション',
-        frame_panel_title:  'フレームを選択',
-        intensity_label:    '強度',
-        preview_guide_hint: 'フレーム内に収まるよう調整してください',
+        frame_panel_title:       'フレームを選択',
+        frame_section_own:       'レストランオリジナル',
+        frame_section_common:    '共通フレーム',
+        intensity_label:         '強度',
+        preview_guide_hint:      'フレーム内に収まるよう調整してください',
 
         // フレームデコレーション「なし」
-        frame_none:         'なし',
+        frame_none:              'なし',
 
         // 結果画面
         result_title:       '撮影完了',
@@ -149,7 +151,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: 'Photo Filter',
         face_ar_title:      'Face AR Decoration',
-        frame_panel_title:  'Select Frame',
+        frame_panel_title:       'Select Frame',
+        frame_section_own:       'Restaurant Original',
+        frame_section_common:    'Common Frames',
         intensity_label:    'Intensity',
         preview_guide_hint: 'Position yourself within the frame',
 
@@ -226,7 +230,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: '照片滤镜',
         face_ar_title:      'Face AR 装饰',
-        frame_panel_title:  '选择边框',
+        frame_panel_title:       '选择边框',
+        frame_section_own:       '餐厅原创',
+        frame_section_common:    '通用边框',
         intensity_label:    '强度',
         preview_guide_hint: '请调整位置以适应边框',
 
@@ -303,7 +309,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: '相片濾鏡',
         face_ar_title:      'Face AR 裝飾',
-        frame_panel_title:  '選擇邊框',
+        frame_panel_title:       '選擇邊框',
+        frame_section_own:       '餐廳原創',
+        frame_section_common:    '通用邊框',
         intensity_label:    '強度',
         preview_guide_hint: '請調整位置以配合框架',
 
@@ -380,7 +388,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: '사진 필터',
         face_ar_title:      'Face AR 데코레이션',
-        frame_panel_title:  '프레임 선택',
+        frame_panel_title:       '프레임 선택',
+        frame_section_own:       '레스토랑 오리지널',
+        frame_section_common:    '공통 프레임',
         intensity_label:    '강도',
         preview_guide_hint: '프레임 내에 맞게 조정하세요',
 
@@ -457,7 +467,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: 'Filtre Photo',
         face_ar_title:      'Décoration Face AR',
-        frame_panel_title:  'Choisir un cadre',
+        frame_panel_title:       'Choisir un cadre',
+        frame_section_own:       'Original restaurant',
+        frame_section_common:    'Cadres communs',
         intensity_label:    'Intensité',
         preview_guide_hint: 'Ajustez votre position dans le cadre',
 
@@ -534,7 +546,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: 'Filtro de foto',
         face_ar_title:      'Decoración Face AR',
-        frame_panel_title:  'Seleccionar marco',
+        frame_panel_title:       'Seleccionar marco',
+        frame_section_own:       'Original del restaurante',
+        frame_section_common:    'Marcos comunes',
         intensity_label:    'Intensidad',
         preview_guide_hint: 'Ajuste su posición dentro del marco',
 
@@ -611,7 +625,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: 'Fotofilter',
         face_ar_title:      'Face-AR-Dekoration',
-        frame_panel_title:  'Rahmen wählen',
+        frame_panel_title:       'Rahmen wählen',
+        frame_section_own:       'Restaurant-Original',
+        frame_section_common:    'Gemeinsame Rahmen',
         intensity_label:    'Intensität',
         preview_guide_hint: 'Positionieren Sie sich im Rahmen',
 
@@ -688,7 +704,9 @@ const I18N_TRANSLATIONS = {
 
         filter_panel_title: 'Filtro de foto',
         face_ar_title:      'Decoração Face AR',
-        frame_panel_title:  'Selecionar moldura',
+        frame_panel_title:       'Selecionar moldura',
+        frame_section_own:       'Original do restaurante',
+        frame_section_common:    'Molduras comuns',
         intensity_label:    'Intensidade',
         preview_guide_hint: 'Ajuste sua posição dentro da moldura',
 
