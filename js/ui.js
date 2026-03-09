@@ -162,10 +162,7 @@ function renderFrameList() {
             frameList.appendChild(sep);
         }
 
-        const grid = document.createElement('div');
-        grid.className = 'frame-section-grid';
-        frames.forEach(f => grid.appendChild(buildItem(f)));
-        frameList.appendChild(grid);
+        frames.forEach(f => frameList.appendChild(buildItem(f)));
     }
 
     // 「なし」+ レストランオリジナルを同じセクションに（空白セル削減）
