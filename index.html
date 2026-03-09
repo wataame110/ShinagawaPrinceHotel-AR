@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#D4AF37">
+    <link rel="manifest" href="config/manifest.json">
+    <title>フォトフレーム撮影 - 品川プリンスホテル</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon.ico">
+
+    <!-- 認証チェック（最初に実行） -->
+    <script>
+    (function() {
+        if (!sessionStorage.getItem('authenticated')) {
+            const p = new URL(window.location.href).searchParams.get('restaurant');
+            window.location.href = 'login.html' + (p ? '?restaurant=' + p : '');
+        }
+        window.authRestaurantId   = sessionStorage.getItem('restaurantId');
+        window.authRestaurantName = sessionStorage.getItem('restaurantName');
+    })();
+    </script>
+
+    <!-- MediaPipe FaceDetection（CDN）顔ARフィルター用 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js" crossorigin="anonymous" defer></script>
+</head>
+<body>
+<div id="app">
+
+    <!-- ================================================================
+         カメラ画面
+         ================================================================ -->
+    <div id="camera-screen" class="screen active">
+
+        <!-- ローディング -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- ヘッダー: ロゴ / ボタン群 -->
+        <div class="camera-header">
+            <button id="logout-btn" class="logout-btn" title="ログアウト">🚪</button>
+
+            <div class="camera-header-brand">
+                <img src="assets/images/logo-shinagawa-prince.png" alt="品川プリンスホテル" class="camera-header-logo">
+                <span class="camera-header-restaurant" id="camera-header-title"></span>
+            </div>
+
+            <div class="header-buttons">
+                <button id="filter-toggle"      class="hdr-btn" title="写真フィルター">🎞</button>
+                <button id="face-filter-toggle" class="hdr-btn" title="Face ARデコレーション">😄</button>
+                <button id="message-toggle"     class="hdr-btn" title="メッセージ編集">💬</button>
+                <button id="frame-select-toggle" class="hdr-btn" title="フレーム選択">🖼️</button>
+                <div id="lang-selector-anchor"></div>
+            </div>
+        </div>
+
+        <!-- ビデオコンテナ（4:3） -->
+        <div id="video-container">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <img  id="frame-overlay" src="" alt="Frame"
+                  onerror="this.onerror=null;this.style.opacity='0'">
+            <!-- 顔AR描画用 Canvas（video の上・frame の下） -->
+            <canvas id="face-filter-canvas"></canvas>
+            <!-- メッセージプレビューガイド -->
+            <div class="preview-guide">
+                <p class="preview-guide-text" id="preview-guide-text"></p>
+            </div>
+        </div>
+
+        <!-- コントロール -->
+        <div id="controls">
+            <button id="switch-camera-btn" class="btn-switch-camera" title="カメラ切り替え">🔄</button>
+            <button id="capture-btn" class="btn btn-primary">撮 影</button>
+        </div>
+
+        <!-- カウントダウン -->
+        <div id="countdown" class="hidden"></div>
+
+        <!-- ======================================================
+             写真フィルターパネル（position: fixed）
+             ====================================================== -->
+        <div id="filter-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>写真フィルター</h3>
+                <button id="filter-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="filter-list" class="filter-grid"></div>
+        </div>
+
+        <!-- ======================================================
+             Face AR デコレーションパネル（position: fixed）
+             ====================================================== -->
+        <div id="face-filter-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>Face AR デコレーション</h3>
+                <button id="face-filter-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="face-filter-list" class="face-filter-list"></div>
+        </div>
+
+        <!-- ======================================================
+             メッセージ編集パネル（position: fixed）
+             ====================================================== -->
+        <div id="message-editor" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>表示メッセージ</h3>
+                <button id="message-editor-close" class="close-btn">✕</button>
+            </div>
+            <div class="message-editor-content">
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-date" data-i18n="msg_date_label">日付</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-date-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <input type="date" id="message-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-text" data-i18n="msg_text_label">メッセージ</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-text-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <input type="text" id="message-text" class="form-input"
+                           placeholder="お誕生日おめでとうございます"
+                           maxlength="40" value="お誕生日おめでとうございます">
+                </div>
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-location" data-i18n="msg_location_label">場所</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-location-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <div class="location-input-group">
+                        <input type="text" id="message-location" class="form-input location-readonly" readonly>
+                        <button type="button" id="edit-location-btn" class="btn-edit-location">編集</button>
+                    </div>
+                </div>
+
+                <!-- 書体・サイズ・位置カスタマイズ -->
+                <div class="form-group msg-style-group">
+                    <label class="msg-style-label" data-i18n="msg_font_label">書体</label>
+                    <select id="msg-font-select" class="form-input">
+                        <option value="'MS Gothic', 'MS ゴシック', sans-serif">MS ゴシック</option>
+                        <option value="'MS PGothic', 'MS Pゴシック', sans-serif">MS Pゴシック</option>
+                        <option value="'Meiryo', 'メイリオ', sans-serif" selected>メイリオ</option>
+                        <option value="'Meiryo UI', sans-serif">Meiryo UI</option>
+                        <option value="'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', sans-serif">ヒラギノ角ゴシック</option>
+                        <option value="'Hiragino Maru Gothic ProN', 'ヒラギノ丸ゴ ProN', sans-serif">ヒラギノ丸ゴシック</option>
+                        <option value="'Yu Gothic', '游ゴシック', sans-serif">游ゴシック</option>
+                        <option value="'Yu Gothic UI', sans-serif">YU Gothic UI</option>
+                        <option value="'Noto Sans JP', 'Noto Sans', sans-serif">Noto Sans</option>
+                        <option value="'Sou Ei Kaku Pop', 'HGSSoeiKakupoptai', sans-serif">創英角ポップ体</option>
+                        <option value="'AR POP', 'ARPOP', sans-serif">ARPOP</option>
+                        <option value="'Kfont', sans-serif">けいふぉんと！</option>
+                        <option value="'Ranobe POP', sans-serif">ラノベPOP</option>
+                    </select>
+                </div>
+                <div class="form-row-2col">
+                    <div class="form-group">
+                        <label class="msg-style-label" data-i18n="msg_size_label">サイズ</label>
+                        <select id="msg-size-select" class="form-input">
+                            <option value="12">小（12px）</option>
+                            <option value="16" selected>中（16px）</option>
+                            <option value="22">大（22px）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="msg-style-label" data-i18n="msg_pos_label">位置</label>
+                        <select id="msg-position-select" class="form-input">
+                            <option value="top-left">上・左</option>
+                            <option value="top-center">上・中央</option>
+                            <option value="top-right">上・右</option>
+                            <option value="bottom-left">下・左</option>
+                            <option value="bottom-center" selected>下・中央</option>
+                            <option value="bottom-right">下・右</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="message-apply" class="btn btn-primary btn-full">適用</button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+             フレーム選択パネル（position: fixed）
+             ====================================================== -->
+        <div id="frame-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>フレームを選択</h3>
+                <button id="frame-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="frame-list" class="frame-list"></div>
+        </div>
+
+        <!-- パネル外タップで閉じるオーバーレイ -->
+        <div id="panel-overlay" class="panel-overlay"></div>
+
+    </div><!-- /#camera-screen -->
+
+    <!-- ================================================================
+         結果画面
+         ================================================================ -->
+    <div id="result-screen" class="screen">
+        <div class="result-header">
+            <span class="result-header-title" data-i18n="result_title">— 撮影完了 —</span>
+        </div>
+        <div id="result-container">
+            <canvas id="result-canvas"></canvas>
+        </div>
+        <div id="result-controls">
+            <button id="retake-btn"   class="btn btn-secondary">再撮影</button>
+            <button id="download-btn" class="btn btn-primary">保存する</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         エラー画面
+         ================================================================ -->
+    <div id="error-screen" class="screen">
+        <div class="error-message">
+            <p id="error-text" data-i18n="error_camera">カメラへのアクセスを許可してください</p>
+            <button id="retry-btn" class="btn btn-primary" data-i18n="retry_btn">再試行</button>
+        </div>
+    </div>
+
+</div><!-- /#app -->
+
+<!-- ================================================================
+     スクリプト読み込み順序:
+     app.js（DOM変数定義）→ モジュール群 → ui.js（イベント登録）
+     ================================================================ -->
+<script src="js/i18n.js"></script>
+<script src="js/app.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/filter.js"></script>
+<script src="js/face-filter.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

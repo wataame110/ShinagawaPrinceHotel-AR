@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARフォト QRコード生成ツール - 品川プリンスホテル</title>
+    <!-- QRコード生成ツール専用スタイルシート -->
+     <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/qr-generator.css">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <img src="../assets/images/logo-shinagawa-prince.png" alt="品川プリンスホテル" class="hotel-logo-img">
+        <p class="subtitle">レストランごとのQRコード生成ツール</p>
+        
+        <div class="input-section">
+            <div class="form-group">
+                <label for="base-url">ベースURL</label>
+                <input type="text" id="base-url" value="https://your-domain.com/login.html" placeholder="https://example.com/login.html">
+            </div>
+            <button class="btn" onclick="generateAllQRCodes()">全レストランのQRコードを生成</button>
+            <button class="btn" onclick="printAllQRCodes()">印刷用ページを開く</button>
+        </div>
+        
+        <div id="qr-grid" class="qr-grid"></div>
+    </div>
+
+    <!-- QRCode.js ライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        // レストラン情報
+        const restaurants = [
+            { id: 'table9', name: 'TABLE 9 TOKYO', fullName: 'DINING & BAR TABLE 9 TOKYO', password: 'table9tokyo' },
+            { id: 'hapuna', name: 'HAPUNA', fullName: 'LUXE DINING HAPUNA', password: 'hapuna2026' },
+            { id: 'gojusantsugi', name: '五十三次', fullName: '味街道 五十三次', password: 'gojusan53' },
+            { id: 'daihanten', name: '品川大飯店', fullName: '中国料理 品川大飯店', password: 'daihanten88' },
+            { id: 'ichozaka', name: 'いちょう坂', fullName: 'ICHOZAKA Bistro Japonais', password: 'ichozaka99' },
+            { id: 'pivot', name: 'PIVOT', fullName: 'SHINAGAWA PIVOT', password: 'pivot2026' },
+            { id: 'jojoen', name: '叙々苑', fullName: 'Jojoen Shinagawa Prince Hotel', password: 'jojoen777' },
+            { id: 'maunakea', name: 'MAUNA KEA', fullName: 'Mauna Kea Coffee Lounge', password: 'maunakea55' },
+            { id: 'boulangerie', name: 'ブーランジェリー', fullName: 'Boulangerie Shinagawa', password: 'boulang365' },
+            { id: 'kitchen', name: '品川キッチン', fullName: 'Food Court Shinagawa Kitchen', password: 'kitchen123' },
+            { id: 'garden', name: 'カフェガーデン', fullName: 'Café & Party Garden SHINAGAWA', password: 'garden456' },
+            { id: 'tennouzu', name: '天王洲', fullName: '鉄板焼き 天王洲', password: 'tennouzu38' }
+        ];
+        
+        function generateAllQRCodes() {
+            const baseUrl = document.getElementById('base-url').value;
+            const grid = document.getElementById('qr-grid');
+            grid.innerHTML = '';
+            
+            restaurants.forEach(restaurant => {
+                const url = `${baseUrl}?restaurant=${restaurant.id}`;
+                
+                const card = document.createElement('div');
+                card.className = 'qr-card';
+                card.innerHTML = `
+                    <h3>${restaurant.name}</h3>
+                    <p>${restaurant.fullName}</p>
+                    <div class="password-display">パスワード: ${restaurant.password}</div>
+                    <div id="qr-${restaurant.id}" class="qr-code"></div>
+                    <div class="url-display">${url}</div>
+                    <div class="btn-group">
+                        <button class="btn" onclick="downloadQR('qr-${restaurant.id}', '${restaurant.id}')">QRコード保存</button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+                
+                // QRコード生成
+                new QRCode(document.getElementById(`qr-${restaurant.id}`), {
+                    text: url,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#1a2332',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            });
+        }
+        
+        function downloadQR(elementId, restaurantId) {
+            const canvas = document.querySelector(`#${elementId} canvas`);
+            if (canvas) {
+                const url = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `QR_${restaurantId}_ShinagawaPrince.png`;
+                link.href = url;
+                link.click();
+            }
+        }
+        
+        function printAllQRCodes() {
+            const printWindow = window.open('', '_blank');
+            const baseUrl = document.getElementById('base-url').value;
+            
+            let html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>QRコード一覧 - 品川プリンスホテル</title>
+                    <style>
+                        @media print {
+                            .page-break { page-break-after: always; }
+                        }
+                        body { font-family: sans-serif; padding: 20px; }
+                        .qr-item { 
+                            text-align: center; 
+                            margin: 40px 0; 
+                            padding: 20px;
+                            border: 2px solid #D4AF37;
+                            border-radius: 10px;
+                        }
+                        h1 { color: #D4AF37; text-align: center; }
+                        h2 { color: #1a2332; }
+                        .password { 
+                            background: #fffacd; 
+                            padding: 10px; 
+                            border-radius: 5px;
+                            font-size: 20px;
+                            font-weight: bold;
+                            margin: 10px 0;
+                        }
+                        .url { 
+                            font-size: 12px; 
+                            color: #666; 
+                            word-break: break-all;
+                            margin: 10px 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>品川プリンスホテル - レストランQRコード</h1>
+            `;
+            
+            restaurants.forEach((restaurant, index) => {
+                const url = `${baseUrl}?restaurant=${restaurant.id}`;
+                const canvas = document.querySelector(`#qr-${restaurant.id} canvas`);
+                const qrImage = canvas ? canvas.toDataURL('image/png') : '';
+                
+                html += `
+                    <div class="qr-item ${index < restaurants.length - 1 ? 'page-break' : ''}">
+                        <h2>${restaurant.fullName}</h2>
+                        <img src="${qrImage}" alt="QR Code" style="width: 300px; height: 300px;">
+                        <div class="password">パスワード: ${restaurant.password}</div>
+                        <div class="url">${url}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</body></html>';
+            
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        
+        // ページ読み込み時に自動生成
+        window.addEventListener('load', () => {
+            generateAllQRCodes();
+        });
+    </script>
+</body>
+</html>

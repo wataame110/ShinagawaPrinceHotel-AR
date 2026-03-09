@@ -1,0 +1,272 @@
+/**
+ * ======================================================================
+ * メインアプリケーション (app.js)
+ * アプリケーションの初期化、DOM要素の定義、グローバル設定を担当
+ * ======================================================================
+ */
+
+// ======================================================================
+// DOM要素の取得
+// HTMLから各要素への参照を取得して変数に格納
+// ======================================================================
+
+// --- 画面要素 ---
+// 3つのメイン画面（カメラ、結果、エラー）
+const cameraScreen = document.getElementById('camera-screen');      // カメラプレビュー画面
+const resultScreen = document.getElementById('result-screen');      // 撮影結果表示画面
+const errorScreen = document.getElementById('error-screen');        // エラー表示画面
+
+// ローディング表示
+const loadingOverlay = document.getElementById('loading-overlay');  // カメラ起動中のオーバーレイ
+
+// --- カメラ関連要素 ---
+const cameraHeaderTitle = document.getElementById('camera-header-title');  // ヘッダータイトル
+const videoContainer = document.getElementById('video-container');          // ビデオコンテナ
+const cameraVideo = document.getElementById('camera-video');                // カメラライブプレビュー
+const frameOverlay = document.getElementById('frame-overlay');              // 装飾フレーム画像
+const previewGuideText = document.getElementById('preview-guide-text');     // プレビューガイドテキスト
+const switchCameraBtn = document.getElementById('switch-camera-btn');       // カメラ切り替えボタン
+const captureBtn = document.getElementById('capture-btn');                  // 撮影ボタン
+const countdown = document.getElementById('countdown');                     // カウントダウン表示
+
+// --- フレーム選択UI ---
+const frameSelectToggle = document.getElementById('frame-select-toggle');  // フレーム選択開閉ボタン
+const frameSelector = document.getElementById('frame-selector');            // フレーム選択パネル
+const frameSelectorClose = document.getElementById('frame-selector-close'); // パネル閉じるボタン
+const frameList = document.getElementById('frame-list');                    // フレーム一覧リスト
+
+// --- ログアウトボタン ---
+const logoutBtn = document.getElementById('logout-btn');                    // ログアウトボタン
+
+// --- メッセージ編集UI ---
+const messageToggle = document.getElementById('message-toggle');                // メッセージ編集開閉ボタン
+const messageEditor = document.getElementById('message-editor');                // メッセージ編集パネル
+const messageEditorClose = document.getElementById('message-editor-close');     // パネル閉じるボタン
+const messageDateInput = document.getElementById('message-date');               // 日付入力欄
+const messageTextInput = document.getElementById('message-text');               // メッセージ入力欄
+const messageLocationInput = document.getElementById('message-location');       // 場所入力欄
+const messageDateEnableCheckbox = document.getElementById('message-date-enable');         // 日付表示チェックボックス
+const messageTextEnableCheckbox = document.getElementById('message-text-enable');         // メッセージ表示チェックボックス
+const messageLocationEnableCheckbox = document.getElementById('message-location-enable'); // 場所表示チェックボックス
+const editLocationBtn = document.getElementById('edit-location-btn');           // 場所編集ボタン
+const messageApplyBtn = document.getElementById('message-apply');               // 適用ボタン
+
+// --- フィルター選択UI ---
+const filterSelector = document.getElementById('filter-selector');         // 写真フィルターパネル
+
+// --- 顔ARフィルター選択UI ---
+const faceFilterSelector = document.getElementById('face-filter-selector'); // 顔フィルターパネル
+
+// --- 結果画面要素 ---
+const resultCanvas = document.getElementById('result-canvas');      // 撮影画像表示用Canvas
+const retakeBtn = document.getElementById('retake-btn');            // 再撮影ボタン
+const downloadBtn = document.getElementById('download-btn');        // 保存ボタン
+
+// --- エラー画面要素 ---
+const errorText = document.getElementById('error-text');            // エラーメッセージテキスト
+const retryBtn = document.getElementById('retry-btn');              // 再試行ボタン
+
+// ======================================================================
+// グローバル変数定義
+// 各モジュールで共有される変数
+// ======================================================================
+
+/**
+ * カメラストリームオブジェクト
+ * @type {MediaStream|null}
+ */
+let stream = null;
+
+/**
+ * 現在のカメラ方向
+ * 'user' = インカメラ（前面）, 'environment' = アウトカメラ（背面）
+ * @type {string}
+ */
+let currentFacingMode = 'user';
+
+/**
+ * 現在読み込まれているフレーム画像オブジェクト
+ * @type {HTMLImageElement|null}
+ */
+let frameImage = null;
+
+/**
+ * フレーム設定データ
+ * @type {Object|null}
+ */
+let framesConfig = null;
+
+/**
+ * 現在選択中のフレームID
+ * @type {string}
+ */
+let currentFrameId = 'hapuna';
+
+/**
+ * 記念日メッセージの設定
+ * @type {Object}
+ */
+let messageConfig = {
+    date: {
+        enabled: true,
+        value: ''
+    },
+    text: {
+        enabled: true,
+        value: 'お誕生日おめでとうございます'
+    },
+    location: {
+        enabled: true,
+        value: ''
+    },
+    style: {
+        fontFamily: "'Meiryo', 'メイリオ', sans-serif",
+        fontSize:   '16',
+        position:   'bottom-center'
+    }
+};
+
+// ======================================================================
+// アプリケーション初期化
+// ページ読み込み完了時に実行される処理
+// ======================================================================
+
+/**
+ * アプリケーション起動時の初期化処理
+ * 
+ * 実行内容:
+ * 1. 今日の日付をメッセージ入力欄に設定
+ * 2. レストラン情報に基づいて場所を自動設定
+ * 3. フレーム設定を読み込み
+ * 4. カメラを起動
+ * 5. Service Workerを登録（対応ブラウザのみ）
+ */
+window.addEventListener('load', async () => {
+    // ======================================================
+    // HTTPS セキュアコンテキストチェック
+    // カメラ(getUserMedia)はHTTPS環境が必須
+    // localhost / 127.0.0.1 は開発用として許可
+    // ======================================================
+    const isSecureContext = window.isSecureContext;
+    const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+    if (!isSecureContext && !isLocalhost) {
+        const lang = localStorage.getItem('sph_lang') || 'ja';
+        const messages = {
+            ja: 'このアプリはHTTPS環境でのみ動作します。\nHTTPSでアクセスし直してください。',
+            en: 'This app requires a secure HTTPS connection.\nPlease reload via HTTPS.',
+            'zh-CN': '此应用需要HTTPS安全连接。\n请通过HTTPS重新访问。',
+            'zh-TW': '此應用程式需要HTTPS安全連線。\n請透過HTTPS重新存取。',
+            ko:  '이 앱은 HTTPS 보안 연결이 필요합니다.\nHTTPS로 다시 접속해 주세요.',
+            fr:  'Cette application nécessite une connexion HTTPS sécurisée.\nVeuillez vous reconnecter via HTTPS.',
+            es:  'Esta aplicación requiere una conexión HTTPS segura.\nVuelva a acceder mediante HTTPS.',
+            de:  'Diese App erfordert eine sichere HTTPS-Verbindung.\nBitte rufen Sie die Seite über HTTPS auf.',
+            pt:  'Este aplicativo requer uma conexão HTTPS segura.\nAcesse novamente via HTTPS.',
+        };
+        const msg = messages[lang] || messages['ja'];
+        document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#111;color:#fff;font-size:1rem;text-align:center;padding:2rem;white-space:pre-line;font-family:sans-serif;">${msg}</div>`;
+        return;
+    }
+
+    // ======================================================
+    // iOS Safari の100vh問題に対応するビューポート高さ設定
+    // アドレスバーの高さを除いた実際の表示高さを--vhに設定
+    // ======================================================
+    function setVH() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(setVH, 200);
+    });
+
+    // ======================================================
+    // 初期化処理を try/catch/finally で保護
+    // 例外が発生してもローディングオーバーレイが残らないように
+    // ======================================================
+    try {
+        // 今日の日付を取得してISO形式に変換（YYYY-MM-DD）
+        const today = new Date().toISOString().split('T')[0];
+
+        messageConfig.date.value = today;
+
+        if (messageDateInput)     messageDateInput.value     = messageConfig.date.value;
+        if (messageTextInput)     messageTextInput.value     = messageConfig.text.value;
+        if (messageLocationInput) messageLocationInput.value = messageConfig.location.value;
+
+        // レストラン情報を読み込んで場所を設定
+        try {
+            const response = await fetch('assets/config/restaurants.json');
+            if (response.ok) {
+                const restaurantsData = await response.json();
+                const authRestaurantId = window.authRestaurantId || sessionStorage.getItem('restaurantId');
+                if (authRestaurantId && restaurantsData.restaurants) {
+                    const restaurant = restaurantsData.restaurants.find(r => r.id === authRestaurantId);
+                    if (restaurant) {
+                        const locationText = `品川プリンスホテル　${restaurant.fullName}`;
+                        if (messageLocationInput) messageLocationInput.value = locationText;
+                        messageConfig.location.value = locationText;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Restaurant info load failed (non-fatal):', e);
+        }
+
+        // フレーム設定ファイルを読み込み
+        loadFramesConfig();
+
+        // ヘッダーとプレビューガイドを更新
+        updateCameraHeader();
+        updatePreviewGuide();
+
+        // 写真フィルターUIを構築
+        if (typeof buildFilterUI === 'function') buildFilterUI();
+
+        // 顔ARフィルターを初期化
+        if (typeof initFaceFilter === 'function') initFaceFilter();
+
+        // カメラを初期化
+        initCamera();
+
+        // Service Workerの登録（対応ブラウザのみ）
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((regs) => {
+                regs.forEach((reg) => {
+                    if (reg.active && reg.active.scriptURL && reg.active.scriptURL.includes('/js/sw.js')) {
+                        reg.unregister();
+                    }
+                });
+            });
+            navigator.serviceWorker.register('./sw.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration.scope);
+                })
+                .catch((error) => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+    } catch (fatalError) {
+        // 予期しない例外でローディングが固まらないようフォールバック
+        console.error('App init error:', fatalError);
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        if (typeof showError === 'function') {
+            showError('アプリの起動に失敗しました。ページを再読み込みしてください。');
+        }
+    }
+});
+
+// ======================================================================
+// アプリケーション終了時の処理
+// ブラウザを閉じる前にリソースを解放
+// ======================================================================
+
+/**
+ * ページを離れる前のクリーンアップ処理
+ * カメラストリームを停止してリソースを解放
+ */
+window.addEventListener('beforeunload', () => {
+    // カメラストリームを停止
+    stopCamera();
+});

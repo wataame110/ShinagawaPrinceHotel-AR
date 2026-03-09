@@ -1,0 +1,244 @@
+{
+  "hotelName": "品川プリンスホテル",
+  "aspectRatio": "3:4",
+
+  "_comment_frames": "======================================================",
+  "_comment_common": "共通フレーム（7種）: 全レストランで使用可能",
+  "_comment_restaurant": "レストランオリジナルフレーム（各2種）:",
+  "_comment_replace": "  差し替え方法: path / thumbnail のファイルを置き換えるだけでOK",
+  "_comment_path": "  ファイル配置先: assets/images/frames/restaurants/{restaurantId}/",
+  "_comment_end": "======================================================",
+
+  "commonFrames": [
+    {
+      "id": "common_iy02",
+      "name": "ピンクフローラル",
+      "path": "assets/images/frames/common/common_iy02.png",
+      "thumbnail": "assets/images/frames/common/common_iy02.png",
+      "description": "淡いピンクの花々が彩る水彩風フレーム"
+    },
+    {
+      "id": "common_k01",
+      "name": "リーフアーチ",
+      "path": "assets/images/frames/common/common_k01.png",
+      "thumbnail": "assets/images/frames/common/common_k01.png",
+      "description": "緑のリーフアーチが美しいナチュラルフレーム"
+    },
+    {
+      "id": "common_k03",
+      "name": "カラフルフラワー",
+      "path": "assets/images/frames/common/common_k03.png",
+      "thumbnail": "assets/images/frames/common/common_k03.png",
+      "description": "色とりどりの花が咲き誇るカラフルフレーム"
+    },
+    {
+      "id": "common_i1",
+      "name": "グリーンスクロール",
+      "path": "assets/images/frames/common/common_i1.png",
+      "thumbnail": "assets/images/frames/common/common_i1.png",
+      "description": "グリーンのつた模様が優雅に絡まるフレーム"
+    },
+    {
+      "id": "common_i3",
+      "name": "和風レッド",
+      "path": "assets/images/frames/common/common_i3.png",
+      "thumbnail": "assets/images/frames/common/common_i3.png",
+      "description": "紅梅と水引が美しい和モダンフレーム"
+    },
+    {
+      "id": "common_m01",
+      "name": "アールヌーボー",
+      "path": "assets/images/frames/common/common_m01.png",
+      "thumbnail": "assets/images/frames/common/common_m01.png",
+      "description": "アーチ型のアールヌーボー装飾フレーム"
+    },
+    {
+      "id": "common_pink_floral",
+      "name": "ピンクバルーン",
+      "path": "assets/images/frames/common/common_pink_floral.png",
+      "thumbnail": "assets/images/frames/common/common_pink_floral.png",
+      "description": "鮮やかなピンクの花が咲き誇る華やかフレーム"
+    }
+  ],
+
+  "restaurantFrames": {
+    "_comment": "各レストランのオリジナルフレーム2種。差し替え時は path と thumbnail のファイルパスを更新してください。",
+
+    "table9": [
+      {
+        "id": "table9_original_1",
+        "name": "TABLE 9 オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/table9/table9_frame1.png"
+      },
+      {
+        "id": "table9_original_2",
+        "name": "TABLE 9 オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/table9/table9_frame2.png"
+      }
+    ],
+    "hapuna": [
+      {
+        "id": "hapuna_original_1",
+        "name": "HAPUNA オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/hapuna/hapuna_frame1.png"
+      },
+      {
+        "id": "hapuna_original_2",
+        "name": "HAPUNA オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/hapuna/hapuna_frame2.png"
+      }
+    ],
+    "gojusantsugi": [
+      {
+        "id": "gojusan_original_1",
+        "name": "五十三次 オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/gojusantsugi/gojusantsugi_frame1.png"
+      },
+      {
+        "id": "gojusan_original_2",
+        "name": "五十三次 オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/gojusantsugi/gojusantsugi_frame2.png"
+      }
+    ],
+    "daihanten": [
+      {
+        "id": "daihanten_original_1",
+        "name": "大飯店 オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/daihanten/daihanten_frame1.png"
+      },
+      {
+        "id": "daihanten_original_2",
+        "name": "大飯店 オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/daihanten/daihanten_frame2.png"
+      }
+    ],
+    "ichozaka": [
+      {
+        "id": "ichozaka_original_1",
+        "name": "いちょう坂 オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/ichozaka/ichozaka_frame1.png"
+      },
+      {
+        "id": "ichozaka_original_2",
+        "name": "いちょう坂 オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/ichozaka/ichozaka_frame2.png"
+      }
+    ],
+    "pivot": [
+      {
+        "id": "pivot_original_1",
+        "name": "PIVOT オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/pivot/pivot_frame1.png"
+      },
+      {
+        "id": "pivot_original_2",
+        "name": "PIVOT オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/pivot/pivot_frame2.png"
+      }
+    ],
+    "jojoen": [
+      {
+        "id": "jojoen_original_1",
+        "name": "叙々苑 オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/jojoen/jojoen_frame1.png"
+      },
+      {
+        "id": "jojoen_original_2",
+        "name": "叙々苑 オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/jojoen/jojoen_frame2.png"
+      }
+    ],
+    "maunakea": [
+      {
+        "id": "maunakea_original_1",
+        "name": "マウナケア オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/maunakea/maunakea_frame1.png"
+      },
+      {
+        "id": "maunakea_original_2",
+        "name": "マウナケア オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/maunakea/maunakea_frame2.png"
+      }
+    ],
+    "boulangerie": [
+      {
+        "id": "boulangerie_original_1",
+        "name": "ブーランジェリー オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/boulangerie/boulangerie_frame1.png"
+      },
+      {
+        "id": "boulangerie_original_2",
+        "name": "ブーランジェリー オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/boulangerie/boulangerie_frame2.png"
+      }
+    ],
+    "kitchen": [
+      {
+        "id": "kitchen_original_1",
+        "name": "品川キッチン オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/kitchen/kitchen_frame1.png"
+      },
+      {
+        "id": "kitchen_original_2",
+        "name": "品川キッチン オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/kitchen/kitchen_frame2.png"
+      }
+    ],
+    "garden": [
+      {
+        "id": "garden_original_1",
+        "name": "シナガワ ガーデン オリジナル①",
+        "path": "assets/images/frames/restaurants/placeholder_1.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_1.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/garden/garden_frame1.png"
+      },
+      {
+        "id": "garden_original_2",
+        "name": "シナガワ ガーデン オリジナル②",
+        "path": "assets/images/frames/restaurants/placeholder_2.png",
+        "thumbnail": "assets/images/frames/restaurants/placeholder_2.png",
+        "_note": "差し替え先: assets/images/frames/restaurants/garden/garden_frame2.png"
+      }
+    ]
+  }
+}
