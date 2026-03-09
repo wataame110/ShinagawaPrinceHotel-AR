@@ -8,7 +8,7 @@
  *  - JSON / 設定ファイルはネットワーク優先
  */
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME    = `sph-photo-${CACHE_VERSION}`;
 
 // ── 事前キャッシュするコアアセット（確実に存在するもののみ）──────────

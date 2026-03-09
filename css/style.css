@@ -563,6 +563,9 @@ body {
 /* ======================================================================
  * フレーム選択パネル
  * position: fixed で #camera-screen の overflow に影響されない
+ * 構造: .frame-selector > .frame-selector-header + .frame-list
+ *        .frame-list > (.frame-list-sep + .frame-section-grid)*
+ *        .frame-section-grid > .frame-item*
  * ====================================================================== */
 .frame-selector {
     position: fixed;
@@ -570,14 +573,14 @@ body {
     left: 0;
     right: 0;
     background: rgba(22, 32, 48, 0.98);
+    -webkit-backdrop-filter: blur(30px);
     backdrop-filter: blur(30px);
-    border-radius: 24px 24px 0 0;
-    padding: 16px 16px 20px;
+    border-radius: 20px 20px 0 0;
+    padding: 14px;
     z-index: 200;
-    max-height: 50vh;
+    max-height: 55vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-top: 2px solid var(--color-gold-primary);
@@ -588,23 +591,19 @@ body {
     transform: translateY(0);
 }
 
-.frame-selector.hidden {
-    display: flex;
-}
-
 .frame-selector-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.3);
     flex-shrink: 0;
 }
 
 .frame-selector-header h3 {
     color: var(--color-gold-primary);
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
@@ -612,38 +611,35 @@ body {
 
 /* 閉じるボタン */
 .close-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: rgba(212, 175, 55, 0.15);
     border: 1px solid var(--color-gold-primary);
     color: var(--color-gold-primary);
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .close-btn:active {
     transform: scale(0.9);
 }
 
-/* フレームリスト */
+/* ---- フレームリスト（スクロールコンテナ） ---- */
 .frame-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 32px;
-    overflow-y: auto;
     flex: 1;
     min-height: 0;
-    padding: 4px 2px;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
 .frame-list::-webkit-scrollbar {
-    width: 5px;
+    width: 4px;
 }
 
 .frame-list::-webkit-scrollbar-thumb {
@@ -651,26 +647,47 @@ body {
     border-radius: 4px;
 }
 
+/* ---- セクション区切りラベル ---- */
+.frame-list-sep {
+    text-align: center;
+    color: rgba(212, 175, 55, 0.6);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 8px 0 6px;
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+    margin-top: 4px;
+}
+
+.frame-list-sep:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* ---- セクション内グリッド（3列固定） ---- */
+.frame-section-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 4px 0 8px;
+}
+
+/* ---- フレームアイテム ---- */
 .frame-item {
     position: relative;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     background: rgba(255, 255, 255, 0.05);
-    /* aspect-ratio フォールバック: padding-top で 4:3 (133%) を確保 */
-    height: 0;
-    padding-top: 133%;
 }
 
-/* aspect-ratio 対応ブラウザでは padding-top を解除 */
-@supports (aspect-ratio: 3 / 4) {
-    .frame-item {
-        height: auto;
-        padding-top: 0;
-        aspect-ratio: 3 / 4;
-    }
+/* アスペクト比を ::before 疑似要素で確保（全ブラウザ互換） */
+.frame-item::before {
+    content: '';
+    display: block;
+    padding-top: 133.33%;  /* 3:4 = 高さ/幅 = 4/3 = 133.33% */
 }
 
 .frame-item:active {
@@ -679,15 +696,14 @@ body {
 
 .frame-item.selected {
     border-color: var(--color-gold-primary);
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
 }
 
+/* サムネイル画像ラッパー */
 .frame-thumb-wrap {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     height: 100%;
 }
@@ -696,6 +712,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .frame-badge-soon {
@@ -710,7 +727,6 @@ body {
     border-radius: 3px;
     white-space: nowrap;
     pointer-events: none;
-    letter-spacing: 0.03em;
 }
 
 .frame-item img {
@@ -725,9 +741,9 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.9), transparent);
     color: var(--color-cream);
-    padding: 4px 4px;
+    padding: 16px 4px 4px;
     font-size: 9px;
     text-align: center;
     font-weight: 600;
@@ -907,9 +923,8 @@ body {
         min-width: 130px;
     }
 
-    .frame-list {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
+    .frame-section-grid {
+        gap: 16px;
     }
 
     #result-controls {
@@ -944,20 +959,25 @@ body {
     .message-editor {
         max-height: 80vh;
     }
+
+    .frame-section-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
 }
 
 /* ======================================================================
  * レスポンシブ - タブレット（iPad等）
  * ====================================================================== */
 @media (min-width: 600px) {
-    .frame-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 40px;
+    .frame-section-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
     }
 
     .frame-selector {
-        max-height: 45vh;
-        padding: 20px;
+        max-height: 50vh;
+        padding: 18px;
     }
 }
 
@@ -1036,21 +1056,7 @@ body {
 .filter-icon { font-size: 26px; line-height: 1; }
 .filter-name { color: var(--color-cream); font-size: 10px; text-align: center; line-height: 1.3; }
 
-/* フレームリスト区切り線 */
-.frame-list-sep {
-    grid-column: 1 / -1;
-    display: block;
-    width: 100%;
-    text-align: center;
-    color: rgba(212, 175, 55, 0.6);
-    font-size: 10px;
-    letter-spacing: 0.5px;
-    padding: 6px 0 2px;
-    border-top: 1px solid rgba(212, 175, 55, 0.2);
-    margin-top: 2px;
-    height: auto;
-    min-height: 22px;
-}
+/* (frame-list-sep は L651 で定義済み) */
 
 /* パネル外タップで閉じるオーバーレイ */
 .panel-overlay {
