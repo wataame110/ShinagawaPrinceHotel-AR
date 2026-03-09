@@ -159,7 +159,19 @@ function drawMessageOnCanvas(ctx, width, height) {
         const parts = cfg.date.value.split('-').map(Number);
         const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(cfg.date.value);
         if (!isNaN(d)) {
-            lines.push(`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`);
+            // 現在の言語に合わせた日付フォーマット
+            const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ja';
+            const localeMap = {
+                'ja': 'ja-JP', 'en': 'en-US', 'zh': 'zh-CN', 'zh-TW': 'zh-TW',
+                'ko': 'ko-KR', 'fr': 'fr-FR', 'es': 'es-ES', 'de': 'de-DE', 'pt': 'pt-PT'
+            };
+            const locale = localeMap[lang] || 'en-US';
+            try {
+                const fmt = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+                lines.push(fmt.format(d));
+            } catch (_) {
+                lines.push(`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`);
+            }
         }
     }
     if (hasText)     lines.push(cfg.text.value);
@@ -251,18 +263,27 @@ async function downloadImage() {
         const file = new File([blob], filename, { type: 'image/jpeg', lastModified: Date.now() });
 
         // ---- 方法 1: Web Share API（iOS Safari / Android Chrome → フォトライブラリ） ----
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // canShare が未実装のブラウザも navigator.share のみで試みる
+        const canShare = navigator.canShare
+            ? navigator.canShare({ files: [file] })
+            : (typeof navigator.share === 'function');
+
+        if (canShare && typeof navigator.share === 'function') {
             try {
-                await navigator.share({ files: [file] });
-                return; // 共有シートが開いた → 正常完了
+                await navigator.share({
+                    files: [file],
+                    title: '品川プリンスホテル フォト'
+                });
+                return; // シェアシートが開いた → 完了（「写真に保存」を選択）
             } catch (err) {
                 if (err.name === 'AbortError') return; // ユーザーがキャンセル
-                console.warn('Web Share API failed, trying fallback:', err);
+                // SecurityError: ユーザージェスチャーなしで呼ばれた場合など
+                console.warn('Web Share API failed, using download fallback:', err);
             }
         }
 
-        // ---- 方法 2: Clipboard API（非対応ブラウザ向け） ----
-        // ---- 方法 3: <a download> フォールバック ----
+        // ---- 方法 2: <a download> フォールバック ----
+        // （デスクトップブラウザ・Web Share 非対応環境）
         const url  = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href     = url;

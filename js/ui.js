@@ -216,8 +216,8 @@ function updatePreviewGuide() {
         if (!isNaN(d)) {
             // ロケール対応の日付フォーマット
             const localeMap = {
-                ja: 'ja-JP', en: 'en-US', zh_cn: 'zh-CN', zh_tw: 'zh-TW',
-                ko: 'ko-KR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', pt: 'pt-PT'
+                'ja': 'ja-JP', 'en': 'en-US', 'zh': 'zh-CN', 'zh-TW': 'zh-TW',
+                'ko': 'ko-KR', 'fr': 'fr-FR', 'es': 'es-ES', 'de': 'de-DE', 'pt': 'pt-PT'
             };
             const locale = localeMap[lang] || 'en-US';
             try {

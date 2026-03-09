@@ -20,8 +20,8 @@
     --color-shadow: rgba(0, 0, 0, 0.3);
     --font-luxury: 'Times New Roman', 'Noto Serif JP', serif;
     --font-modern: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
-    --header-height: 60px;
-    --controls-height: 90px;
+    --header-height: 54px;
+    --controls-height: 72px;
 }
 
 /* ======================================================================
@@ -211,19 +211,21 @@ body {
  * ビデオコンテナ — 9:16 固定アスペクト比（縦長スマートフォン標準）
  * ====================================================================== */
 #video-container {
-    flex: 1;
+    /* ★ 幅を「画面幅」と「利用可能高さ×9/16」の小さい方に設定
+     *   → コンテナが常に真の9:16になり、object-fit:cover でのドアップを防止 */
+    width: min(100vw, calc((var(--vh, 1vh) * 100 - var(--header-height) - var(--controls-height)) * 9 / 16));
+    /* dvh 対応ブラウザ用オーバーライド */
+    width: min(100vw, calc((100dvh - var(--header-height) - var(--controls-height)) * 9 / 16));
+    aspect-ratio: 9 / 16;
+    flex-shrink: 0;
+    margin: 0 auto;
     position: relative;
     overflow: hidden;
     background: #000;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* 縦16:横9（スマートフォン縦向き標準比率）を守りながら幅に合わせる */
-    aspect-ratio: 9 / 16;
-    z-index: 0;                /* 独立したスタッキングコンテキストを作成し、内部要素がヘッダーに重ならないようにする */
-    max-height: calc(100dvh - var(--header-height) - var(--controls-height));
-    width: 100%;
-    margin: 0 auto;
+    z-index: 0;
 }
 
 /* カメラライブプレビュー
@@ -287,8 +289,10 @@ body {
  * 撮影ボタンエリア
  * ====================================================================== */
 #controls {
-    flex-shrink: 0;
-    height: var(--controls-height);
+    /* flex: 1 で残りスペースを吸収 → iPhone 11 など高身長端末での隙間を埋める */
+    flex: 1;
+    min-height: var(--controls-height);
+    max-height: 100px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -500,12 +504,23 @@ body {
         0 15px 50px rgba(0,0,0,0.5),
         0 0 0 1px rgba(212, 175, 55, 0.3);
     display: block;
+    /* iOS: 長押しで「写真を保存」が表示されるよう touch-callout を許可 */
+    -webkit-touch-callout: default;
+    -webkit-user-select: auto;
+    user-select: auto;
+    touch-action: auto;
+}
+
+/* 結果コンテナも長押し許可（子Canvasを含む領域全体） */
+#result-container {
+    -webkit-touch-callout: default;
+    -webkit-user-select: auto;
 }
 
 /* 結果画面ボタンエリア - 固定高さで必ず表示 */
 #result-controls {
     flex-shrink: 0;
-    height: 100px;
+    height: 90px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -513,6 +528,20 @@ body {
     background: rgba(26, 35, 50, 0.95);
     border-top: 1px solid rgba(212, 175, 55, 0.2);
     padding: 0 20px;
+}
+
+/* 保存ガイドヒント（長押し・写真に保存） */
+.save-hint {
+    flex-shrink: 0;
+    text-align: center;
+    color: rgba(212, 175, 55, 0.65);
+    font-size: 10px;
+    padding: 4px 16px 8px;
+    background: rgba(26, 35, 50, 0.95);
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: keep-all;
 }
 
 /* ======================================================================
@@ -604,12 +633,16 @@ body {
 
 /* フレームリスト */
 .frame-list {
+    /* flex: 1 で bottom-panel 内の残りスペースをすべて使用 */
+    flex: 1;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 12px;
+    /* 4列固定: 375px端末で (375-32-30)/4 ≈ 78px/列 */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
     overflow-y: auto;
-    max-height: calc(60vh - 100px);
-    padding: 5px;
+    padding: 4px 2px 4px 2px;
+    align-content: start;
 }
 
 .frame-list::-webkit-scrollbar {
@@ -735,9 +768,13 @@ body {
 }
 
 .message-editor-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
+    padding-right: 2px;
 }
 
 .form-group {
@@ -902,31 +939,33 @@ body {
     background: rgba(22, 32, 48, 0.98);
     backdrop-filter: blur(30px);
     border-radius: 24px 24px 0 0;
-    padding: 20px 20px 30px;
+    padding: 16px 16px 24px;
     z-index: 200;
+    /* 最大高さ: iPhone8 で 60vh = 400px、iPhone11 で 60vh = 537px */
     max-height: 60vh;
+    display: flex;
+    flex-direction: column;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-top: 2px solid var(--color-gold-primary);
     box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
-    overflow-y: auto;
-    /* 画面外のパネルはタッチ操作を受け付けない */
     pointer-events: none;
 }
 .bottom-panel.active  { transform: translateY(0); pointer-events: auto; }
-.bottom-panel.hidden  { display: block; }
+.bottom-panel.hidden  { display: flex; }
 
 .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    flex-shrink: 0;
 }
 .panel-header h3 {
     color: var(--color-gold-primary);
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 0.8px;
@@ -934,10 +973,14 @@ body {
 
 /* フィルターグリッド */
 .filter-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-    gap: 12px;
+    gap: 10px;
     padding: 4px 2px;
+    align-content: start;
 }
 .filter-item {
     display: flex;
@@ -1014,6 +1057,9 @@ body {
 
 /* パネル内コンテナ（block フロー — 外側をグリッドにしない） */
 .face-filter-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: block;
     padding: 4px 2px;
 }
@@ -1294,11 +1340,13 @@ body {
         max-width: 60% !important;
         height: 100% !important;
         max-height: 100% !important;
+        aspect-ratio: auto !important;
         flex-shrink: 0;
     }
 
     #controls {
         position: relative !important;
+        flex: none !important;
         width: 40% !important;
         height: 100% !important;
         display: flex !important;
