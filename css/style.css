@@ -572,9 +572,12 @@ body {
     background: rgba(22, 32, 48, 0.98);
     backdrop-filter: blur(30px);
     border-radius: 24px 24px 0 0;
-    padding: 24px;
+    padding: 16px 16px 20px;
     z-index: 200;
-    max-height: 55vh;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-top: 2px solid var(--color-gold-primary);
@@ -586,21 +589,22 @@ body {
 }
 
 .frame-selector.hidden {
-    display: block;
+    display: flex;
 }
 
 .frame-selector-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    flex-shrink: 0;
 }
 
 .frame-selector-header h3 {
     color: var(--color-gold-primary);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     margin: 0;
     letter-spacing: 1px;
@@ -629,11 +633,13 @@ body {
 /* フレームリスト */
 .frame-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     overflow-y: auto;
-    max-height: calc(55vh - 100px);
-    padding: 5px;
+    flex: 1;
+    min-height: 0;
+    padding: 4px 2px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .frame-list::-webkit-scrollbar {
@@ -647,8 +653,8 @@ body {
 
 .frame-item {
     position: relative;
-    aspect-ratio: 9 / 16;
-    border-radius: 10px;
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
@@ -679,14 +685,14 @@ body {
 
 .frame-badge-soon {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 3px;
+    right: 3px;
     background: rgba(220, 80, 80, 0.88);
     color: #fff;
-    font-size: 9px;
+    font-size: 7px;
     font-weight: 700;
-    padding: 2px 5px;
-    border-radius: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
     white-space: nowrap;
     pointer-events: none;
     letter-spacing: 0.03em;
@@ -705,10 +711,14 @@ body {
     right: 0;
     background: linear-gradient(to top, rgba(26, 35, 50, 0.95), transparent);
     color: var(--color-cream);
-    padding: 8px;
-    font-size: 12px;
+    padding: 4px 4px;
+    font-size: 9px;
     text-align: center;
     font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ======================================================================
@@ -881,6 +891,11 @@ body {
         min-width: 130px;
     }
 
+    .frame-list {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
     #result-controls {
         gap: 10px;
     }
@@ -912,10 +927,6 @@ body {
     .frame-selector,
     .message-editor {
         max-height: 80vh;
-    }
-
-    .frame-list {
-        max-height: calc(80vh - 110px);
     }
 }
 
@@ -999,11 +1010,11 @@ body {
     grid-column: 1 / -1;
     text-align: center;
     color: rgba(212, 175, 55, 0.6);
-    font-size: 11px;
-    letter-spacing: 1px;
-    padding: 8px 0 4px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 6px 0 2px;
     border-top: 1px solid rgba(212, 175, 55, 0.2);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 /* パネル外タップで閉じるオーバーレイ */
