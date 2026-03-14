@@ -54,10 +54,10 @@
     },
     {
       "id": "common_pink_floral",
-      "name": "ピンクバルーン",
-      "path": "assets/images/frames/common/common_pink_floral.png",
-      "thumbnail": "assets/images/frames/common/common_pink_floral.png",
-      "description": "鮮やかなピンクの花が咲き誇る華やかフレーム"
+      "name": "キャット",
+      "path": "assets/images/frames/common/common_cat.png",
+      "thumbnail": "assets/images/frames/common/common_cat.png",
+      "description": "猫と肉球の影絵カーニバル"
     }
   ],
 
