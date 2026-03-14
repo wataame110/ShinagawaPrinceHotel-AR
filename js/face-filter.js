@@ -1,6 +1,9 @@
 /**
  * ======================================================================
- * face-filter.js  – Face AR デコレーション
+ * face-filter.js  – Face AR デコレーション（MediaPipe Face Mesh 468点版）
+ *
+ * MediaPipe Face Mesh の 468 点ランドマークを使用して
+ * 顔の各パーツを高精度に追跡・描画する。
  *
  * 残デコレーション一覧（15種）
  *   👓 目元    : glasses / heart_eyes / star_eyes / round_glasses /
@@ -10,22 +13,19 @@
  *   ✨ アクセ  : monocle / flower_crown / star_stickers /
  *                butterfly_mask / diamond_tiara
  *
- * 廃盤済み（削除）
- *   頭部・帽子 / 動物変身 / 季節・イベント 全種
- *   顔全体カテゴリ全種（panda_face 含む）
- *   口元 の beard（あごひげ）
- *
- * 精度改善ポイント
- *   ① minDetectionConfidence 0.55 で検出しやすく設定
- *   ② バウンディングボックスの最小サイズ・アスペクト比バリデーション
- *   ③ faceLoopGen 世代番号による二重ループ防止
- *   ④ 最大 5 人まで個別に面追跡スムージング（近接マッチング）
- *   ⑤ 被写体人数が増えるほど強度を若干スケールダウン
+ * 主要ランドマークインデックス (468点中):
+ *   右目中心: 159   左目中心: 386
+ *   右目内端: 133   右目外端: 33    左目内端: 362   左目外端: 263
+ *   鼻先:     1     鼻根:     6
+ *   上唇中央: 13    下唇中央: 14    口左端: 61     口右端: 291
+ *   右眉外端: 46    左眉外端: 276
+ *   顔輪郭:   10(おでこ上) / 152(あご先)
+ *   右こめかみ: 234  左こめかみ: 454
  * ======================================================================
  */
 
 // ======================================================================
-// カテゴリー定義（廃盤カテゴリー除外後）
+// カテゴリー定義
 // ======================================================================
 
 const FACE_DECORATION_CATEGORIES = [
@@ -37,13 +37,13 @@ const FACE_DECORATION_CATEGORIES = [
 ];
 
 // ======================================================================
-// デコレーション一覧（廃盤除外後 17種 + none）
+// デコレーション一覧（15種 + none）
 // ======================================================================
 
 const FACE_DECORATIONS = [
     { id: 'none',           name: 'なし',           icon: '🚫', category: 'none_cat' },
 
-    // ── 目元（6種）─────────────────────────────────────────────
+    // ── 目元（6種）
     { id: 'glasses',        name: 'サングラス',      icon: '😎', category: 'eyes' },
     { id: 'heart_eyes',     name: 'ハートアイ',      icon: '😍', category: 'eyes' },
     { id: 'star_eyes',      name: 'スターアイ',      icon: '🌟', category: 'eyes' },
@@ -51,15 +51,15 @@ const FACE_DECORATIONS = [
     { id: 'eyepatch',       name: 'アイパッチ',      icon: '🏴‍☠️', category: 'eyes' },
     { id: 'nerd_glasses',   name: 'ナード眼鏡',      icon: '🤓', category: 'eyes' },
 
-    // ── 鼻元（2種）─────────────────────────────────────────────
+    // ── 鼻元（2種）
     { id: 'pig_nose',       name: '豚鼻',            icon: '🐽', category: 'nose' },
     { id: 'clown_nose',     name: 'ピエロ鼻',        icon: '🔴', category: 'nose' },
 
-    // ── 口元（2種 ※ beard は廃盤）───────────────────────────────
+    // ── 口元（2種）
     { id: 'mustache',       name: '口ひげ',          icon: '🥸', category: 'mouth' },
     { id: 'lips_red',       name: '赤リップ',        icon: '💋', category: 'mouth' },
 
-    // ── アクセサリー（5種）──────────────────────────────────────
+    // ── アクセサリー（5種）
     { id: 'monocle',        name: '片眼鏡',          icon: '🧐', category: 'accessory' },
     { id: 'flower_crown',   name: '花冠',            icon: '🌺', category: 'accessory' },
     { id: 'star_stickers',  name: 'スター装飾',      icon: '✨', category: 'accessory' },
@@ -73,121 +73,188 @@ const FACE_DECORATIONS = [
 
 let faceDecorationIntensity = 1.0;
 let currentDecorationId     = 'none';
-let faceDetector            = null;
-let faceDetectorReady       = false;   // initialize() 完了後に true
+let faceMesh                = null;
+let faceMeshReady           = false;
 let faceCanvas              = null;
 let faceCtx                 = null;
 let faceAnimFrame           = null;
 let faceFilterActive        = false;
-let faceLoopGen             = 0;       // ループ世代番号（古いループを無効化する）
+let faceLoopGen             = 0;
 
 // ======================================================================
-// 複数人対応: 面追跡テーブル
-//   SMOOTH_ALPHA_POS:  位置スムージング（低いほど安定、高いほど即応）
-//   SMOOTH_ALPHA_SIZE: サイズスムージング（ノイズが多いため位置より緩く）
-//   STABLE_NEEDED: 1 = 即座に描画開始（遅延なし）
-//   MATCH_DIST: 同一顔と判定する正規化距離の上限
+// スムージング（複数人対応）
 // ======================================================================
 
 const MAX_TRACKED_FACES   = 5;
-const SMOOTH_ALPHA_POS    = 0.38;   // 位置: 安定重視（旧 0.55 → ガタつき軽減）
-const SMOOTH_ALPHA_SIZE   = 0.25;   // サイズ: さらに緩くしてスケールノイズを抑制
-const MATCH_DIST          = 0.30;
-const STABLE_NEEDED       = 1;      // 即座に描画（遅延ゼロ）
+const SMOOTH_ALPHA        = 0.40;
 const FACE_TIMEOUT_FRAMES = 8;
-const FACE_MIN_SIZE       = 0.04;
-const FACE_MAX_SIZE       = 0.95;
-const FACE_MIN_ASPECT     = 0.45;
-const FACE_MAX_ASPECT     = 2.20;
 
-let faceStates  = [];
-let _nextFaceId = 0;
+let trackedFaces = [];
+let _nextFaceId  = 0;
 
-/** スムージング関数（指数移動平均）
- * @param {object} s     - 追跡状態オブジェクト
- * @param {string} key   - キー名
- * @param {number} v     - 新しい値
- * @param {number} alpha - スムージング係数（省略時は位置用 SMOOTH_ALPHA_POS）
- */
-function smoothVal(s, key, v, alpha) {
-    const a = (alpha !== undefined) ? alpha : SMOOTH_ALPHA_POS;
-    s[key] = (s[key] == null) ? v : s[key] * (1 - a) + v * a;
-    return s[key];
+function resetTrackedFaces() { trackedFaces = []; }
+
+function smoothLandmark(state, idx, rawX, rawY) {
+    const kx = 'x' + idx, ky = 'y' + idx;
+    state[kx] = (state[kx] == null) ? rawX : state[kx] * (1 - SMOOTH_ALPHA) + rawX * SMOOTH_ALPHA;
+    state[ky] = (state[ky] == null) ? rawY : state[ky] * (1 - SMOOTH_ALPHA) + rawY * SMOOTH_ALPHA;
+    return { x: state[kx], y: state[ky] };
 }
 
-/** 全追跡状態をリセット */
-function resetFaceStates() {
-    faceStates = [];
-}
+function matchAndTrack(faces) {
+    const matched = new Map();
+    for (const tf of trackedFaces) tf.missed++;
 
-/**
- * 現フレームの検出リストと追跡テーブルをマッチング
- * @param {Array} validDets - バリデーション済み検出リスト
- * @returns {Map<number, object>} detectionIndex -> faceState
- */
-function matchFaces(validDets) {
-    // detectionIndex -> faceState のマップを返す（位置マッチングではなくインデックスで直接参照）
-    const detToState = new Map();
+    for (let fi = 0; fi < faces.length; fi++) {
+        const lm = faces[fi];
+        const cx = lm[1].x, cy = lm[1].y;
+        let bestDist = 0.25, bestTF = null;
 
-    for (const st of faceStates) st.missedFrames++;
-
-    for (let di = 0; di < validDets.length; di++) {
-        const { cx, cy } = validDets[di];
-        let bestDist = MATCH_DIST;
-        let bestState = null;
-
-        for (const st of faceStates) {
-            if ([...detToState.values()].includes(st)) continue;
-            const d = Math.hypot(cx - st.cx, cy - st.cy);
-            if (d < bestDist) { bestDist = d; bestState = st; }
+        for (const tf of trackedFaces) {
+            if ([...matched.values()].includes(tf)) continue;
+            const d = Math.hypot(cx - tf.cx, cy - tf.cy);
+            if (d < bestDist) { bestDist = d; bestTF = tf; }
         }
 
-        if (bestState) {
-            bestState.cx = cx;
-            bestState.cy = cy;
-            bestState.missedFrames = 0;
-            bestState.stableCount  = Math.min(bestState.stableCount + 1, STABLE_NEEDED + 2);
-            detToState.set(di, bestState);
-        } else if (faceStates.length < MAX_TRACKED_FACES) {
-            const newSt = { id: _nextFaceId++, cx, cy, s: {}, stableCount: 1, missedFrames: 0 };
-            faceStates.push(newSt);
-            detToState.set(di, newSt);
+        if (bestTF) {
+            bestTF.cx = cx; bestTF.cy = cy; bestTF.missed = 0;
+            matched.set(fi, bestTF);
+        } else if (trackedFaces.length < MAX_TRACKED_FACES) {
+            const newTF = { id: _nextFaceId++, cx, cy, s: {}, missed: 0 };
+            trackedFaces.push(newTF);
+            matched.set(fi, newTF);
         }
     }
 
-    faceStates = faceStates.filter(st => st.missedFrames < FACE_TIMEOUT_FRAMES);
-
-    return detToState;
+    trackedFaces = trackedFaces.filter(tf => tf.missed < FACE_TIMEOUT_FRAMES);
+    return matched;
 }
 
 // ======================================================================
-// 顔検出ループ
+// 468点ランドマーク → 描画用座標への変換
+// ======================================================================
+
+// 主要インデックス定数
+const LM = {
+    // 右目
+    RIGHT_EYE_CENTER: 159, RIGHT_EYE_INNER: 133, RIGHT_EYE_OUTER: 33,
+    RIGHT_EYE_TOP: 158, RIGHT_EYE_BOTTOM: 145,
+    // 左目
+    LEFT_EYE_CENTER: 386, LEFT_EYE_INNER: 362, LEFT_EYE_OUTER: 263,
+    LEFT_EYE_TOP: 385, LEFT_EYE_BOTTOM: 374,
+    // 眉
+    RIGHT_BROW_OUTER: 46, RIGHT_BROW_INNER: 105,
+    LEFT_BROW_OUTER: 276, LEFT_BROW_INNER: 334,
+    // 鼻
+    NOSE_TIP: 1, NOSE_BRIDGE: 6, NOSE_BOTTOM: 2,
+    NOSE_RIGHT: 129, NOSE_LEFT: 358,
+    // 口
+    UPPER_LIP: 13, LOWER_LIP: 14, MOUTH_LEFT: 61, MOUTH_RIGHT: 291,
+    UPPER_LIP_TOP: 0, LOWER_LIP_BOTTOM: 17,
+    // 顔輪郭
+    FOREHEAD: 10, CHIN: 152,
+    RIGHT_CHEEK: 234, LEFT_CHEEK: 454,
+    RIGHT_JAW: 132, LEFT_JAW: 361,
+    // こめかみ（フレーム用）
+    RIGHT_TEMPLE: 127, LEFT_TEMPLE: 356
+};
+
+function extractCoords(landmarks, state, W, H) {
+    const p = (idx) => {
+        const raw = landmarks[idx];
+        const sm = smoothLandmark(state, idx, raw.x * W, raw.y * H);
+        return sm;
+    };
+
+    const rEye    = p(LM.RIGHT_EYE_CENTER);
+    const lEye    = p(LM.LEFT_EYE_CENTER);
+    const rEyeIn  = p(LM.RIGHT_EYE_INNER);
+    const rEyeOut = p(LM.RIGHT_EYE_OUTER);
+    const lEyeIn  = p(LM.LEFT_EYE_INNER);
+    const lEyeOut = p(LM.LEFT_EYE_OUTER);
+    const rEyeT   = p(LM.RIGHT_EYE_TOP);
+    const rEyeB   = p(LM.RIGHT_EYE_BOTTOM);
+    const lEyeT   = p(LM.LEFT_EYE_TOP);
+    const lEyeB   = p(LM.LEFT_EYE_BOTTOM);
+
+    const rBrowO  = p(LM.RIGHT_BROW_OUTER);
+    const lBrowO  = p(LM.LEFT_BROW_OUTER);
+
+    const noseTip = p(LM.NOSE_TIP);
+    const noseBr  = p(LM.NOSE_BRIDGE);
+    const noseR   = p(LM.NOSE_RIGHT);
+    const noseL   = p(LM.NOSE_LEFT);
+
+    const mouthU  = p(LM.UPPER_LIP);
+    const mouthD  = p(LM.LOWER_LIP);
+    const mouthL  = p(LM.MOUTH_LEFT);
+    const mouthR  = p(LM.MOUTH_RIGHT);
+
+    const forehead = p(LM.FOREHEAD);
+    const chin     = p(LM.CHIN);
+    const rCheek   = p(LM.RIGHT_CHEEK);
+    const lCheek   = p(LM.LEFT_CHEEK);
+    const rTemple  = p(LM.RIGHT_TEMPLE);
+    const lTemple  = p(LM.LEFT_TEMPLE);
+
+    const eyeMidX = (rEye.x + lEye.x) / 2;
+    const eyeMidY = (rEye.y + lEye.y) / 2;
+    const eyeSep  = Math.hypot(rEye.x - lEye.x, rEye.y - lEye.y);
+
+    const rEyeW = Math.hypot(rEyeIn.x - rEyeOut.x, rEyeIn.y - rEyeOut.y);
+    const lEyeW = Math.hypot(lEyeIn.x - lEyeOut.x, lEyeIn.y - lEyeOut.y);
+    const rEyeH = Math.hypot(rEyeT.x - rEyeB.x, rEyeT.y - rEyeB.y);
+    const lEyeH = Math.hypot(lEyeT.x - lEyeB.x, lEyeT.y - lEyeB.y);
+
+    const faceW = Math.hypot(rCheek.x - lCheek.x, rCheek.y - lCheek.y);
+    const faceH = Math.hypot(forehead.x - chin.x, forehead.y - chin.y);
+
+    const mouthW = Math.hypot(mouthL.x - mouthR.x, mouthL.y - mouthR.y);
+    const mouthMidX = (mouthL.x + mouthR.x) / 2;
+    const mouthMidY = (mouthU.y + mouthD.y) / 2;
+
+    const noseW = Math.hypot(noseR.x - noseL.x, noseR.y - noseL.y);
+
+    const angle = Math.atan2(lEye.y - rEye.y, lEye.x - rEye.x);
+
+    return {
+        rEye, lEye, rEyeIn, rEyeOut, lEyeIn, lEyeOut,
+        rEyeT, rEyeB, lEyeT, lEyeB,
+        rEyeW, lEyeW, rEyeH, lEyeH,
+        rBrowO, lBrowO,
+        noseTip, noseBr, noseR, noseL, noseW,
+        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY,
+        forehead, chin, rCheek, lCheek, rTemple, lTemple,
+        eyeMidX, eyeMidY, eyeSep,
+        faceW, faceH, angle,
+        W, H
+    };
+}
+
+// ======================================================================
+// Face Mesh 検出ループ
 // ======================================================================
 
 function startFaceLoop(gen) {
-    // 初期化未完了・非アクティブ・世代が古い場合は即終了
-    if (!faceDetectorReady || !faceFilterActive || gen !== faceLoopGen) return;
+    if (!faceMeshReady || !faceFilterActive || gen !== faceLoopGen) return;
     faceAnimFrame = requestAnimationFrame(async () => {
-        // 非同期処理中に世代が変わっていたらここで止める（二重ループ防止）
         if (gen !== faceLoopGen || !faceFilterActive) return;
         if (cameraVideo && cameraVideo.readyState >= 2) {
             syncFaceCanvas();
-            try { await faceDetector.send({ image: cameraVideo }); } catch (_) {}
+            try { await faceMesh.send({ image: cameraVideo }); } catch (_) {}
         }
-        // await 後も再チェック（stopFaceLoop が呼ばれた可能性があるため）
         if (faceFilterActive && gen === faceLoopGen) startFaceLoop(gen);
     });
 }
 
 function stopFaceLoop() {
-    faceLoopGen++;             // 世代を上げて実行中の async コールバックを無効化
+    faceLoopGen++;
     faceFilterActive = false;
     if (faceAnimFrame) { cancelAnimationFrame(faceAnimFrame); faceAnimFrame = null; }
     if (faceCtx && faceCanvas) faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
-    resetFaceStates();
+    resetTrackedFaces();
 }
 
-/** faceCanvas をビデオコンテナの CSS ピクセルに同期 */
 function syncFaceCanvas() {
     if (!faceCanvas) return;
     const container = faceCanvas.parentElement;
@@ -200,7 +267,6 @@ function syncFaceCanvas() {
     }
 }
 
-/** object-fit:cover 時のスケール・オフセットを計算 */
 function getObjectFitCoverOffset() {
     if (!cameraVideo || !cameraVideo.videoWidth) return null;
     const container = faceCanvas ? faceCanvas.parentElement : null;
@@ -211,19 +277,18 @@ function getObjectFitCoverOffset() {
     const vw = cameraVideo.videoWidth;
     const vh = cameraVideo.videoHeight;
     const scale = Math.max(cw / vw, ch / vh);
-    return { scale, offsetX: Math.max(0, (vw * scale - cw) / 2),
-             offsetY: Math.max(0, (vh * scale - ch) / 2), vw, vh, cw, ch };
+    return { scale, offsetX: (vw * scale - cw) / 2, offsetY: (vh * scale - ch) / 2, vw, vh, cw, ch };
 }
 
 // ======================================================================
-// 検出結果コールバック
+// 検出結果コールバック (Face Mesh)
 // ======================================================================
 
-function onFaceResults(results) {
+function onFaceMeshResults(results) {
     if (!faceCtx || !faceCanvas) return;
     faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
-    if (!results.detections || results.detections.length === 0) {
-        resetFaceStates();
+    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        resetTrackedFaces();
         return;
     }
     if (currentDecorationId === 'none') return;
@@ -236,101 +301,30 @@ function onFaceResults(results) {
     if (!disp) return;
     const { scale, offsetX, offsetY, vw, vh } = disp;
 
-    // 正規化座標 → 表示ピクセル ヘルパー
-    const tdx = nx => nx * vw * scale - offsetX;
-    const tdy = ny => ny * vh * scale - offsetY;
-    const tdw = nw => nw * vw * scale;
-    const tdh = nh => nh * vh * scale;
+    // Face Mesh の座標は 0.0-1.0 正規化。表示ピクセルに変換
+    const allFaces = results.multiFaceLandmarks.map(lms =>
+        lms.map(pt => ({
+            x: pt.x * vw * scale - offsetX,
+            y: pt.y * vh * scale - offsetY
+        }))
+    );
 
-    // ── バリデーション：不正な検出を除外 ─────────────────────────
-    const validDets = results.detections.filter(det => {
-        const box = det.boundingBox;
-        const w = box.width, h = box.height;
-        // サイズチェック（正規化）
-        if (w < FACE_MIN_SIZE || w > FACE_MAX_SIZE) return false;
-        if (h < FACE_MIN_SIZE || h > FACE_MAX_SIZE) return false;
-        // アスペクト比チェック（顔らしい形状のみ）
-        const aspect = w / h;
-        if (aspect < FACE_MIN_ASPECT || aspect > FACE_MAX_ASPECT) return false;
-        return true;
-    }).map(det => ({
-        det,
-        cx: det.boundingBox.xCenter,
-        cy: det.boundingBox.yCenter
-    }));
+    const matched = matchAndTrack(allFaces);
 
-    if (validDets.length === 0) { resetFaceStates(); return; }
+    const faceCount  = allFaces.length;
+    const countScale = faceCount === 1 ? 1.0 : faceCount === 2 ? 0.90 : 0.80;
+    const intensity  = faceDecorationIntensity * countScale;
 
-    // ── 面追跡マッチング ──────────────────────────────────────
-    const detToState = matchFaces(validDets);
+    for (const [fi, tf] of matched) {
+        const landmarks = allFaces[fi];
+        if (!landmarks || landmarks.length < 468) continue;
 
-    // ── 人数に応じた強度スケーリング ─────────────────────────
-    const faceCount   = validDets.length;
-    const countScale  = faceCount === 1 ? 1.0
-                      : faceCount === 2 ? 0.90
-                      : 0.80;
-    const baseIntensity = faceDecorationIntensity * countScale;
-
-    // ── 各顔を描画（インデックスで det を直接参照） ───────────
-    for (const [di, st] of detToState) {
-        if (st.stableCount < STABLE_NEEDED) continue;
-
-        const { det } = validDets[di];
-        if (!det) continue;
-
-        const box = det.boundingBox;
-        const lm  = det.landmarks;
-
-        // 表示座標に変換
-        const rBx = tdx(box.xCenter);
-        const rBy = tdy(box.yCenter);
-        const rBw = tdw(box.width);
-        const rBh = tdh(box.height);
-
-        const rRex = lm ? tdx(lm[0].x) : rBx - rBw * 0.20;
-        const rRey = lm ? tdy(lm[0].y) : rBy - rBh * 0.10;
-        const rLex = lm ? tdx(lm[1].x) : rBx + rBw * 0.20;
-        const rLey = lm ? tdy(lm[1].y) : rBy - rBh * 0.10;
-        const rNx  = lm ? tdx(lm[2].x) : rBx;
-        const rNy  = lm ? tdy(lm[2].y) : rBy + rBh * 0.07;
-        const rMx  = lm ? tdx(lm[3].x) : rBx;
-        const rMy  = lm ? tdy(lm[3].y) : rBy + rBh * 0.28;
-
-        // 個別スムージング（サイズは位置より緩めのアルファで安定させる）
-        const s   = st.s;
-        const bx  = smoothVal(s, 'bx', rBx);
-        const by  = smoothVal(s, 'by', rBy);
-        const bw  = smoothVal(s, 'bw', rBw, SMOOTH_ALPHA_SIZE);
-        const bh  = smoothVal(s, 'bh', rBh, SMOOTH_ALPHA_SIZE);
-        const rex = smoothVal(s, 'rex', rRex);
-        const rey = smoothVal(s, 'rey', rRey);
-        const lex = smoothVal(s, 'lex', rLex);
-        const ley = smoothVal(s, 'ley', rLey);
-        const nx  = smoothVal(s, 'nx', rNx);
-        const ny  = smoothVal(s, 'ny', rNy);
-        const mx  = smoothVal(s, 'mx', rMx);
-        const my  = smoothVal(s, 'my', rMy);
-
-        // 派生座標
-        const faceTop   = by - bh * 0.5;
-        const faceBot   = by + bh * 0.5;
-        const faceLeft  = bx - bw * 0.5;
-        const faceRight = bx + bw * 0.5;
-        const eyeMidX   = (rex + lex) / 2;
-        const eyeMidY   = (rey + ley) / 2;
-        const eyeSep    = Math.abs(rex - lex);
+        const coords = extractCoords(landmarks, tf.s, W, H);
 
         faceCtx.save();
         if (isFlipped) { faceCtx.translate(W, 0); faceCtx.scale(-1, 1); }
 
-        drawDecoration(faceCtx, currentDecorationId, {
-            bx, by, bw, bh,
-            rex, rey, lex, ley,
-            nx, ny, mx, my,
-            eyeMidX, eyeMidY, eyeSep,
-            faceTop, faceBot, faceLeft, faceRight,
-            W, H
-        }, baseIntensity);
+        drawDecoration(faceCtx, currentDecorationId, coords, intensity);
 
         faceCtx.restore();
     }
@@ -353,10 +347,10 @@ function drawStar(ctx, x, y, r, color) {
     const spikes = 5, outer = r, inner = r * 0.42;
     ctx.beginPath();
     for (let i = 0; i < spikes * 2; i++) {
-        const angle = (i * Math.PI) / spikes - Math.PI / 2;
-        const dist  = i % 2 === 0 ? outer : inner;
-        i === 0 ? ctx.moveTo(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist)
-                : ctx.lineTo(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist);
+        const a = (i * Math.PI) / spikes - Math.PI / 2;
+        const d = i % 2 === 0 ? outer : inner;
+        i === 0 ? ctx.moveTo(x + Math.cos(a) * d, y + Math.sin(a) * d)
+                : ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
     }
     ctx.closePath();
     ctx.fillStyle = color;
@@ -364,52 +358,53 @@ function drawStar(ctx, x, y, r, color) {
 }
 
 // ======================================================================
-// デコレーション描画ルーター
+// デコレーション描画ルーター（468点座標対応版）
 // ======================================================================
 
-function drawDecoration(ctx, id, coords, intensity) {
-    const {
-        bx, by, bw, bh,
-        rex, rey, lex, ley,
-        nx, ny, mx, my,
-        eyeMidX, eyeMidY, eyeSep,
-        faceTop, faceBot, faceLeft, faceRight,
-        W, H
-    } = coords;
-
+function drawDecoration(ctx, id, c, intensity) {
     ctx.globalAlpha = Math.max(0, Math.min(1, intensity));
+
+    const {
+        rEye, lEye, rEyeIn, rEyeOut, lEyeIn, lEyeOut,
+        rEyeW, lEyeW,
+        rBrowO, lBrowO,
+        noseTip, noseR, noseL, noseW,
+        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY,
+        forehead, chin, rCheek, lCheek, rTemple, lTemple,
+        eyeMidX, eyeMidY, eyeSep,
+        faceW, faceH, angle
+    } = c;
 
     switch (id) {
 
         // ── 目元 ──────────────────────────────────────────────────
 
         case 'glasses': {
-            const gR = eyeSep * 0.36;
-            const gY = eyeMidY;
-            ctx.strokeStyle = '#1A1A1A'; ctx.lineWidth = bw * 0.03;
+            const gR = eyeSep * 0.30;
+            ctx.save();
+            ctx.translate(eyeMidX, eyeMidY);
+            ctx.rotate(angle);
+            const halfSep = eyeSep / 2;
+            ctx.strokeStyle = '#1A1A1A'; ctx.lineWidth = faceW * 0.025;
             ctx.fillStyle = 'rgba(20,20,20,0.52)';
-            [rex, lex].forEach(ex => {
-                ctx.beginPath(); ctx.arc(ex, gY, gR, 0, Math.PI * 2);
+            [-halfSep, halfSep].forEach(ox => {
+                ctx.beginPath(); ctx.arc(ox, 0, gR, 0, Math.PI * 2);
                 ctx.fill(); ctx.stroke();
             });
-            // ブリッジ
-            ctx.beginPath(); ctx.moveTo(rex + gR, gY); ctx.lineTo(lex - gR, gY); ctx.stroke();
-            // テンプル
-            ctx.beginPath(); ctx.moveTo(rex - gR, gY); ctx.lineTo(faceLeft - bw * 0.07, gY + bh * 0.04); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(lex + gR, gY); ctx.lineTo(faceRight + bw * 0.07, gY + bh * 0.04); ctx.stroke();
-            // ハイライト
+            ctx.beginPath(); ctx.moveTo(-halfSep + gR, 0); ctx.lineTo(halfSep - gR, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-halfSep - gR, 0); ctx.lineTo(-eyeSep * 0.72, faceW * 0.02); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(halfSep + gR, 0); ctx.lineTo(eyeSep * 0.72, faceW * 0.02); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.18)';
-            [rex, lex].forEach(ex => {
-                ctx.beginPath(); ctx.ellipse(ex - gR * 0.3, gY - gR * 0.3, gR * 0.24, gR * 0.16, -0.5, 0, Math.PI * 2);
-                ctx.fill();
+            [-halfSep, halfSep].forEach(ox => {
+                ctx.beginPath(); ctx.ellipse(ox - gR * 0.3, -gR * 0.3, gR * 0.24, gR * 0.16, -0.5, 0, Math.PI * 2); ctx.fill();
             });
+            ctx.restore();
             break;
         }
 
         case 'heart_eyes': {
-            const hR = eyeSep * 0.32;
-            const hY = eyeMidY;
-            [[rex, hY], [lex, hY]].forEach(([ex, ey]) => {
+            const hR = eyeSep * 0.26;
+            [[rEye.x, rEye.y], [lEye.x, lEye.y]].forEach(([ex, ey]) => {
                 ctx.fillStyle = '#FF1744';
                 ctx.beginPath();
                 ctx.moveTo(ex, ey + hR * 0.5);
@@ -423,11 +418,10 @@ function drawDecoration(ctx, id, coords, intensity) {
         }
 
         case 'star_eyes': {
-            const sR = eyeSep * 0.28;
-            const sY = eyeMidY;
-            [[rex, sY, '#FFD700'], [lex, sY, '#FFD700']].forEach(([ex, ey, col]) => {
-                drawStar(ctx, ex, ey, sR, col);
-                ctx.strokeStyle = '#FF8800'; ctx.lineWidth = bw * 0.012; ctx.stroke();
+            const sR = eyeSep * 0.22;
+            [[rEye.x, rEye.y], [lEye.x, lEye.y]].forEach(([ex, ey]) => {
+                drawStar(ctx, ex, ey, sR, '#FFD700');
+                ctx.strokeStyle = '#FF8800'; ctx.lineWidth = faceW * 0.01; ctx.stroke();
                 ctx.fillStyle = 'rgba(255,255,255,0.3)';
                 ctx.beginPath(); ctx.arc(ex - sR * 0.28, ey - sR * 0.28, sR * 0.18, 0, Math.PI * 2); ctx.fill();
             });
@@ -435,157 +429,154 @@ function drawDecoration(ctx, id, coords, intensity) {
         }
 
         case 'round_glasses': {
-            const rgR = eyeSep * 0.33;
-            const rgY = eyeMidY;
-            ctx.strokeStyle = '#A06820'; ctx.lineWidth = bw * 0.025;
+            const rgR = eyeSep * 0.28;
+            ctx.save();
+            ctx.translate(eyeMidX, eyeMidY);
+            ctx.rotate(angle);
+            const hs = eyeSep / 2;
+            ctx.strokeStyle = '#A06820'; ctx.lineWidth = faceW * 0.02;
             ctx.fillStyle = 'rgba(160, 230, 255, 0.22)';
-            [rex, lex].forEach(ex => {
-                ctx.beginPath(); ctx.arc(ex, rgY, rgR, 0, Math.PI * 2);
-                ctx.fill(); ctx.stroke();
+            [-hs, hs].forEach(ox => {
+                ctx.beginPath(); ctx.arc(ox, 0, rgR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             });
-            ctx.beginPath(); ctx.moveTo(rex + rgR, rgY); ctx.lineTo(lex - rgR, rgY); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(rex - rgR, rgY); ctx.lineTo(faceLeft - bw * 0.06, rgY + bh * 0.04); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(lex + rgR, rgY); ctx.lineTo(faceRight + bw * 0.06, rgY + bh * 0.04); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-hs + rgR, 0); ctx.lineTo(hs - rgR, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-hs - rgR, 0); ctx.lineTo(-eyeSep * 0.70, faceW * 0.02); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(hs + rgR, 0); ctx.lineTo(eyeSep * 0.70, faceW * 0.02); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.22)';
-            [rex, lex].forEach(ex => {
-                ctx.beginPath(); ctx.ellipse(ex - rgR * 0.28, rgY - rgR * 0.28, rgR * 0.22, rgR * 0.14, -0.5, 0, Math.PI * 2);
-                ctx.fill();
+            [-hs, hs].forEach(ox => {
+                ctx.beginPath(); ctx.ellipse(ox - rgR * 0.28, -rgR * 0.28, rgR * 0.22, rgR * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
             });
+            ctx.restore();
             break;
         }
 
         case 'eyepatch': {
-            const epR = eyeSep * 0.40;
-            const epY = rex < lex ? rey : ley;    // 右目（画面上の左）に装着
-            const epX = rex < lex ? rex : lex;
+            const epR = eyeSep * 0.32;
+            const epX = rEye.x, epY = rEye.y;
             ctx.fillStyle = '#1a1a1a';
             ctx.beginPath(); ctx.arc(epX, epY, epR, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#8B6914'; ctx.lineWidth = bw * 0.022; ctx.stroke();
-            // バンド
-            ctx.strokeStyle = '#2a1a00'; ctx.lineWidth = bw * 0.025;
-            ctx.beginPath();
-            ctx.moveTo(epX - epR, epY - epR * 0.2);
-            ctx.lineTo(faceLeft - bw * 0.1, epY - epR * 0.1);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(epX + epR, epY - epR * 0.2);
-            ctx.lineTo(faceRight + bw * 0.1, epY - epR * 0.1);
-            ctx.stroke();
+            ctx.strokeStyle = '#8B6914'; ctx.lineWidth = faceW * 0.018; ctx.stroke();
+            ctx.strokeStyle = '#2a1a00'; ctx.lineWidth = faceW * 0.02;
+            ctx.beginPath(); ctx.moveTo(epX - epR, epY); ctx.lineTo(rTemple.x, rTemple.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(epX + epR, epY); ctx.lineTo(lTemple.x, lTemple.y); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.12)';
             ctx.beginPath(); ctx.ellipse(epX - epR * 0.28, epY - epR * 0.28, epR * 0.22, epR * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         case 'nerd_glasses': {
-            const ngR = eyeSep * 0.34;
-            const ngY = eyeMidY;
-            ctx.strokeStyle = '#2244AA'; ctx.lineWidth = bw * 0.028;
+            const ngR = eyeSep * 0.28;
+            ctx.save();
+            ctx.translate(eyeMidX, eyeMidY);
+            ctx.rotate(angle);
+            const hs2 = eyeSep / 2;
+            ctx.strokeStyle = '#2244AA'; ctx.lineWidth = faceW * 0.022;
             ctx.fillStyle = 'rgba(200,230,255,0.22)';
-            [rex, lex].forEach(ex => {
-                ctx.beginPath(); ctx.rect(ex - ngR, ngY - ngR * 0.7, ngR * 2, ngR * 1.4);
-                ctx.fill(); ctx.stroke();
+            [-hs2, hs2].forEach(ox => {
+                ctx.beginPath(); ctx.rect(ox - ngR, -ngR * 0.7, ngR * 2, ngR * 1.4); ctx.fill(); ctx.stroke();
                 ctx.fillStyle = 'rgba(255,255,255,0.18)';
-                ctx.beginPath(); ctx.ellipse(ex - ngR * 0.3, ngY - ngR * 0.2, ngR * 0.22, ngR * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(ox - ngR * 0.3, -ngR * 0.2, ngR * 0.22, ngR * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = 'rgba(200,230,255,0.22)';
             });
-            ctx.strokeStyle = '#2244AA';
-            ctx.beginPath(); ctx.moveTo(rex + ngR, ngY); ctx.lineTo(lex - ngR, ngY); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(rex - ngR, ngY); ctx.lineTo(faceLeft - bw * 0.06, ngY + bh * 0.04); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(lex + ngR, ngY); ctx.lineTo(faceRight + bw * 0.06, ngY + bh * 0.04); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-hs2 + ngR, 0); ctx.lineTo(hs2 - ngR, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-hs2 - ngR, 0); ctx.lineTo(-eyeSep * 0.70, faceW * 0.02); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(hs2 + ngR, 0); ctx.lineTo(eyeSep * 0.70, faceW * 0.02); ctx.stroke();
+            ctx.restore();
             break;
         }
 
         // ── 鼻元 ──────────────────────────────────────────────────
 
         case 'pig_nose': {
-            const pnR = bw * 0.13;
+            const pnRx = noseW * 0.70;
+            const pnRy = pnRx * 0.65;
             ctx.fillStyle = '#FF8DA0';
-            ctx.beginPath(); ctx.ellipse(nx, ny + pnR * 0.1, pnR, pnR * 0.72, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#FF6070'; ctx.lineWidth = bw * 0.018; ctx.stroke();
-            // 鼻孔
+            ctx.beginPath(); ctx.ellipse(noseTip.x, noseTip.y, pnRx, pnRy, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#FF6070'; ctx.lineWidth = faceW * 0.014; ctx.stroke();
             ctx.fillStyle = 'rgba(120,40,60,0.72)';
-            [[-pnR * 0.36, pnR * 0.08], [pnR * 0.36, pnR * 0.08]].forEach(([ox, oy]) => {
-                ctx.beginPath(); ctx.ellipse(nx + ox, ny + oy, pnR * 0.22, pnR * 0.18, 0, 0, Math.PI * 2); ctx.fill();
+            const nh = noseW * 0.22;
+            [[-pnRx * 0.36, 0], [pnRx * 0.36, 0]].forEach(([ox, oy]) => {
+                ctx.beginPath(); ctx.ellipse(noseTip.x + ox, noseTip.y + oy, nh, nh * 0.82, 0, 0, Math.PI * 2); ctx.fill();
             });
             ctx.fillStyle = 'rgba(255,255,255,0.28)';
-            ctx.beginPath(); ctx.ellipse(nx - pnR * 0.3, ny - pnR * 0.22, pnR * 0.2, pnR * 0.12, -0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(noseTip.x - pnRx * 0.3, noseTip.y - pnRy * 0.35, pnRx * 0.2, pnRy * 0.16, -0.4, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         case 'clown_nose': {
-            const cnR = bw * 0.11;
-            const grad = ctx.createRadialGradient(nx - cnR * 0.3, ny - cnR * 0.3, 0, nx, ny, cnR);
+            const cnR = noseW * 0.55;
+            const grad = ctx.createRadialGradient(noseTip.x - cnR * 0.3, noseTip.y - cnR * 0.3, 0, noseTip.x, noseTip.y, cnR);
             grad.addColorStop(0, '#FF3030'); grad.addColorStop(1, '#CC0000');
             ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(nx, ny, cnR, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(noseTip.x, noseTip.y, cnR, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = 'rgba(255,255,255,0.32)';
-            ctx.beginPath(); ctx.ellipse(nx - cnR * 0.3, ny - cnR * 0.3, cnR * 0.28, cnR * 0.18, -0.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(noseTip.x - cnR * 0.3, noseTip.y - cnR * 0.3, cnR * 0.28, cnR * 0.18, -0.5, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         // ── 口元 ──────────────────────────────────────────────────
 
         case 'mustache': {
-            const muW = bw * 0.38, muH = bh * 0.08;
-            const muY = my - bh * 0.06;
+            const muW = mouthW * 0.75, muH = faceH * 0.045;
+            const muX = mouthMidX, muY = mouthU.y - faceH * 0.02;
             ctx.fillStyle = '#2A1A0A';
             ctx.beginPath();
-            ctx.moveTo(mx, muY);
-            ctx.bezierCurveTo(mx - muW * 0.10, muY - muH,        mx - muW * 0.50, muY - muH * 0.80, mx - muW * 0.52, muY + muH * 0.30);
-            ctx.bezierCurveTo(mx - muW * 0.40, muY + muH * 1.20, mx - muW * 0.12, muY + muH * 0.50, mx,             muY + muH * 0.30);
-            ctx.bezierCurveTo(mx + muW * 0.12, muY + muH * 0.50, mx + muW * 0.40, muY + muH * 1.20, mx + muW * 0.52, muY + muH * 0.30);
-            ctx.bezierCurveTo(mx + muW * 0.50, muY - muH * 0.80, mx + muW * 0.10, muY - muH,        mx,             muY);
+            ctx.moveTo(muX, muY);
+            ctx.bezierCurveTo(muX - muW * 0.10, muY - muH,        muX - muW * 0.50, muY - muH * 0.80, muX - muW * 0.52, muY + muH * 0.30);
+            ctx.bezierCurveTo(muX - muW * 0.40, muY + muH * 1.20, muX - muW * 0.12, muY + muH * 0.50, muX,              muY + muH * 0.30);
+            ctx.bezierCurveTo(muX + muW * 0.12, muY + muH * 0.50, muX + muW * 0.40, muY + muH * 1.20, muX + muW * 0.52, muY + muH * 0.30);
+            ctx.bezierCurveTo(muX + muW * 0.50, muY - muH * 0.80, muX + muW * 0.10, muY - muH,        muX,              muY);
             ctx.closePath(); ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.12)';
-            ctx.beginPath(); ctx.ellipse(mx - muW * 0.20, muY - muH * 0.10, muW * 0.14, muH * 0.28, 0.3, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         case 'lips_red': {
-            const lpW = bw * 0.22, lpH = bh * 0.072;
+            const lpW = mouthW * 0.55, lpH = faceH * 0.04;
+            const lpX = mouthMidX, lpY = mouthMidY;
             ctx.fillStyle = '#C00020';
             ctx.beginPath();
-            ctx.moveTo(mx - lpW, my - lpH * 0.10);
-            ctx.bezierCurveTo(mx - lpW * 0.60, my - lpH * 1.20, mx - lpW * 0.20, my - lpH * 1.60, mx,             my - lpH * 1.20);
-            ctx.bezierCurveTo(mx + lpW * 0.20, my - lpH * 1.60, mx + lpW * 0.60, my - lpH * 1.20, mx + lpW,       my - lpH * 0.10);
-            ctx.bezierCurveTo(mx + lpW * 0.40, my + lpH * 0.10, mx - lpW * 0.40, my + lpH * 0.10, mx - lpW,       my - lpH * 0.10);
+            ctx.moveTo(lpX - lpW, lpY);
+            ctx.bezierCurveTo(lpX - lpW * 0.60, lpY - lpH * 1.20, lpX - lpW * 0.20, lpY - lpH * 1.60, lpX, lpY - lpH * 1.0);
+            ctx.bezierCurveTo(lpX + lpW * 0.20, lpY - lpH * 1.60, lpX + lpW * 0.60, lpY - lpH * 1.20, lpX + lpW, lpY);
+            ctx.bezierCurveTo(lpX + lpW * 0.40, lpY + lpH * 0.10, lpX - lpW * 0.40, lpY + lpH * 0.10, lpX - lpW, lpY);
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#E0003A';
             ctx.beginPath();
-            ctx.moveTo(mx - lpW, my);
-            ctx.bezierCurveTo(mx - lpW * 0.50, my + lpH * 1.80, mx + lpW * 0.50, my + lpH * 1.80, mx + lpW,       my);
-            ctx.bezierCurveTo(mx + lpW * 0.40, my + lpH * 0.10, mx - lpW * 0.40, my + lpH * 0.10, mx - lpW,       my);
+            ctx.moveTo(lpX - lpW, lpY + lpH * 0.1);
+            ctx.bezierCurveTo(lpX - lpW * 0.50, lpY + lpH * 1.80, lpX + lpW * 0.50, lpY + lpH * 1.80, lpX + lpW, lpY + lpH * 0.1);
+            ctx.bezierCurveTo(lpX + lpW * 0.40, lpY + lpH * 0.2, lpX - lpW * 0.40, lpY + lpH * 0.2, lpX - lpW, lpY + lpH * 0.1);
             ctx.closePath(); ctx.fill();
-            ctx.fillStyle = 'rgba(255,200,200,0.28)';
-            ctx.beginPath(); ctx.ellipse(mx, my + lpH * 1.0, lpW * 0.38, lpH * 0.36, 0, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         // ── アクセサリー ──────────────────────────────────────────
 
         case 'monocle': {
-            const moR = eyeSep * 0.36;
-            ctx.strokeStyle = '#C8A83C'; ctx.lineWidth = bw * 0.03;
+            const moR = eyeSep * 0.30;
+            ctx.strokeStyle = '#C8A83C'; ctx.lineWidth = faceW * 0.025;
             ctx.fillStyle = 'rgba(200,230,200,0.18)';
-            ctx.beginPath(); ctx.arc(rex, eyeMidY, moR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.strokeStyle = '#B8962A'; ctx.lineWidth = bw * 0.014;
-            ctx.setLineDash([bw * 0.02, bw * 0.012]);
-            ctx.beginPath(); ctx.moveTo(rex + moR, eyeMidY + moR * 0.2);
-            ctx.quadraticCurveTo(rex + moR * 1.6, by + bh * 0.2, faceRight + bw * 0.06, by + bh * 0.3); ctx.stroke();
+            ctx.beginPath(); ctx.arc(rEye.x, rEye.y, moR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = '#B8962A'; ctx.lineWidth = faceW * 0.012;
+            ctx.setLineDash([faceW * 0.015, faceW * 0.01]);
+            ctx.beginPath();
+            ctx.moveTo(rEye.x + moR * 0.6, rEye.y + moR);
+            ctx.quadraticCurveTo(rCheek.x, chin.y * 0.6 + rCheek.y * 0.4, rCheek.x + faceW * 0.05, chin.y - faceH * 0.15);
+            ctx.stroke();
             ctx.setLineDash([]);
             ctx.fillStyle = 'rgba(255,255,255,0.25)';
-            ctx.beginPath(); ctx.ellipse(rex - moR * 0.3, eyeMidY - moR * 0.3, moR * 0.22, moR * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(rEye.x - moR * 0.3, rEye.y - moR * 0.3, moR * 0.22, moR * 0.14, -0.5, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         case 'flower_crown': {
-            const fcY = faceTop - bh * 0.04;
+            const fcY = forehead.y - faceH * 0.04;
+            const crownW = faceW * 0.65;
             const colors6 = ['#FF6B9E', '#FF9A3C', '#FFD700', '#6BD96B', '#6BAAFF', '#D06BFF'];
             for (let i = 0; i < 9; i++) {
                 const t = i / 8;
-                const fx = faceLeft - bw * 0.04 + (bw * 1.08) * t;
-                const fy = fcY + Math.sin(t * Math.PI) * bh * 0.06;
-                const fr = bw * 0.06 + Math.sin(t * Math.PI) * bw * 0.01;
+                const fx = eyeMidX - crownW / 2 + crownW * t;
+                const fy = fcY + Math.sin(t * Math.PI) * faceH * 0.03;
+                const fr = faceW * 0.045;
                 const clr = colors6[i % colors6.length];
                 for (let p = 0; p < 5; p++) {
                     const a = (p / 5) * Math.PI * 2;
@@ -602,18 +593,18 @@ function drawDecoration(ctx, id, coords, intensity) {
         }
 
         case 'star_stickers': {
-            const stars6 = [
-                [rex - bw * 0.30, rey - bh * 0.28, '#FFD700', bw * 0.07],
-                [lex + bw * 0.30, ley - bh * 0.28, '#FFD700', bw * 0.07],
-                [bx - bw * 0.52, by,                '#FF88FF', bw * 0.055],
-                [bx + bw * 0.52, by,                '#FF88FF', bw * 0.055],
-                [bx, faceTop - bh * 0.18,           '#44DDFF', bw * 0.06],
-                [bx - bw * 0.26, faceTop - bh * 0.3,'#FF8800', bw * 0.045],
-                [bx + bw * 0.24, faceTop - bh * 0.3,'#FF8800', bw * 0.045]
+            const stars = [
+                [rBrowO.x, rBrowO.y - faceH * 0.06, '#FFD700', faceW * 0.05],
+                [lBrowO.x, lBrowO.y - faceH * 0.06, '#FFD700', faceW * 0.05],
+                [rCheek.x - faceW * 0.06, rCheek.y, '#FF88FF', faceW * 0.04],
+                [lCheek.x + faceW * 0.06, lCheek.y, '#FF88FF', faceW * 0.04],
+                [eyeMidX, forehead.y - faceH * 0.06, '#44DDFF', faceW * 0.045],
+                [rTemple.x, forehead.y, '#FF8800', faceW * 0.035],
+                [lTemple.x, forehead.y, '#FF8800', faceW * 0.035]
             ];
-            stars6.forEach(([sx, sy, sc, sr]) => {
+            stars.forEach(([sx, sy, sc, sr]) => {
                 drawStar(ctx, sx, sy, sr, sc);
-                ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = bw * 0.014;
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = faceW * 0.01;
                 for (let i = 0; i < 4; i++) {
                     const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
                     ctx.beginPath();
@@ -626,8 +617,9 @@ function drawDecoration(ctx, id, coords, intensity) {
         }
 
         case 'butterfly_mask': {
-            const bmSpanX = bw * 0.54, bmH = bh * 0.22;
-            const bmY = eyeMidY - bmH * 0.2;
+            const bmH = faceH * 0.12;
+            const bmSpanX = faceW * 0.42;
+            const bmY = eyeMidY;
             const drawWing = (wx, dir) => {
                 const g = ctx.createLinearGradient(wx, bmY - bmH, wx + dir * bmSpanX * 0.5, bmY + bmH);
                 g.addColorStop(0, 'rgba(100,20,160,0.82)');
@@ -643,45 +635,44 @@ function drawDecoration(ctx, id, coords, intensity) {
                                   wx + dir * bmSpanX * 0.22, bmY + bmH,
                                   wx, bmY);
                 ctx.closePath(); ctx.fill();
-                ctx.strokeStyle = 'rgba(200,100,255,0.6)'; ctx.lineWidth = bw * 0.016; ctx.stroke();
-                ctx.strokeStyle = 'rgba(255,200,255,0.45)'; ctx.lineWidth = bw * 0.01;
-                ctx.beginPath(); ctx.ellipse(wx + dir * bmSpanX * 0.28, bmY - bmH * 0.18,
-                    bmSpanX * 0.11, bmH * 0.28, dir * 0.3, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = 'rgba(200,100,255,0.6)'; ctx.lineWidth = faceW * 0.012; ctx.stroke();
             };
-            drawWing(bx, -1); drawWing(bx, 1);
+            drawWing(eyeMidX, -1); drawWing(eyeMidX, 1);
             ctx.fillStyle = 'rgba(80,10,130,0.88)';
-            ctx.beginPath(); ctx.ellipse(bx, bmY, eyeSep * 0.26, bmH * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(eyeMidX, bmY, eyeSep * 0.22, bmH * 0.28, 0, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
         case 'diamond_tiara': {
-            const dtY = faceTop - bh * 0.02;
-            const dtW = bw * 0.82;
-            const bandGrad = ctx.createLinearGradient(bx - dtW / 2, dtY, bx + dtW / 2, dtY);
+            const dtY = forehead.y;
+            const dtW = faceW * 0.60;
+            const bandGrad = ctx.createLinearGradient(eyeMidX - dtW / 2, dtY, eyeMidX + dtW / 2, dtY);
             bandGrad.addColorStop(0, '#B8860B'); bandGrad.addColorStop(0.5, '#FFD700'); bandGrad.addColorStop(1, '#B8860B');
+            ctx.save();
+            ctx.translate(eyeMidX, dtY);
+            ctx.rotate(angle);
             ctx.fillStyle = bandGrad;
-            ctx.beginPath(); ctx.rect(bx - dtW / 2, dtY - bh * 0.03, dtW, bh * 0.06); ctx.fill();
-            ctx.strokeStyle = '#8B6914'; ctx.lineWidth = bw * 0.012; ctx.stroke();
+            ctx.beginPath(); ctx.rect(-dtW / 2, -faceH * 0.02, dtW, faceH * 0.04); ctx.fill();
+            ctx.strokeStyle = '#8B6914'; ctx.lineWidth = faceW * 0.01; ctx.stroke();
             const drawDiamond = (dx, dy, dw, dh) => {
                 ctx.fillStyle = '#B0E8FF';
                 ctx.beginPath(); ctx.moveTo(dx, dy - dh); ctx.lineTo(dx + dw, dy);
                 ctx.lineTo(dx, dy + dh * 0.6); ctx.lineTo(dx - dw, dy); ctx.closePath(); ctx.fill();
-                ctx.strokeStyle = '#88CCFF'; ctx.lineWidth = bw * 0.012; ctx.stroke();
+                ctx.strokeStyle = '#88CCFF'; ctx.lineWidth = faceW * 0.008; ctx.stroke();
                 ctx.fillStyle = 'rgba(255,255,255,0.55)';
                 ctx.beginPath(); ctx.moveTo(dx - dw * 0.4, dy - dh * 0.5);
-                ctx.lineTo(dx, dy - dh); ctx.lineTo(dx + dw * 0.4, dy - dh * 0.5);
-                ctx.closePath(); ctx.fill();
+                ctx.lineTo(dx, dy - dh); ctx.lineTo(dx + dw * 0.4, dy - dh * 0.5); ctx.closePath(); ctx.fill();
             };
-            drawDiamond(bx,                  dtY - bh * 0.10, bw * 0.08, bh * 0.14);
-            drawDiamond(bx - bw * 0.25,      dtY - bh * 0.04, bw * 0.05, bh * 0.08);
-            drawDiamond(bx + bw * 0.25,      dtY - bh * 0.04, bw * 0.05, bh * 0.08);
-            drawDiamond(bx - bw * 0.38,      dtY,             bw * 0.035,bh * 0.06);
-            drawDiamond(bx + bw * 0.38,      dtY,             bw * 0.035,bh * 0.06);
-            // ゴールドドット
+            drawDiamond(0, -faceH * 0.06, faceW * 0.06, faceH * 0.09);
+            drawDiamond(-dtW * 0.30, -faceH * 0.02, faceW * 0.04, faceH * 0.06);
+            drawDiamond(dtW * 0.30, -faceH * 0.02, faceW * 0.04, faceH * 0.06);
+            drawDiamond(-dtW * 0.48, faceH * 0.01, faceW * 0.028, faceH * 0.04);
+            drawDiamond(dtW * 0.48, faceH * 0.01, faceW * 0.028, faceH * 0.04);
             ctx.fillStyle = '#FFD700';
             for (let i = -3; i <= 3; i++) {
-                ctx.beginPath(); ctx.arc(bx + (dtW * 0.12) * i, dtY, bw * 0.018, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc((dtW * 0.12) * i, 0, faceW * 0.014, 0, Math.PI * 2); ctx.fill();
             }
+            ctx.restore();
             break;
         }
 
@@ -692,7 +683,7 @@ function drawDecoration(ctx, id, coords, intensity) {
 }
 
 // ======================================================================
-// 初期化
+// 初期化（MediaPipe Face Mesh）
 // ======================================================================
 
 async function initFaceFilter() {
@@ -700,28 +691,31 @@ async function initFaceFilter() {
     if (!faceCanvas) return;
     faceCtx = faceCanvas.getContext('2d');
 
-    // 二重初期化防止（初期化完了済みの場合は即返す）
-    if (faceDetectorReady) return;
-    // 初期化中（faceDetector は設定済みだが未完了）の場合も重複防止
-    if (faceDetector) return;
+    if (faceMeshReady) return;
+    if (faceMesh) return;
 
-    if (typeof FaceDetection === 'undefined') {
-        console.warn('MediaPipe FaceDetection not loaded. Face filters unavailable.');
+    if (typeof FaceMesh === 'undefined') {
+        console.warn('MediaPipe FaceMesh not loaded. Face filters unavailable.');
         return;
     }
     try {
-        faceDetector = new FaceDetection({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${f}`
+        faceMesh = new FaceMesh({
+            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${f}`
         });
-        faceDetector.setOptions({ model: 'short', minDetectionConfidence: 0.55 });
-        faceDetector.onResults(onFaceResults);
-        await faceDetector.initialize();
-        faceDetectorReady = true;   // ← 完全初期化完了マーク
-        console.log('FaceDetection initialized');
+        faceMesh.setOptions({
+            maxNumFaces: MAX_TRACKED_FACES,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.55,
+            minTrackingConfidence: 0.50
+        });
+        faceMesh.onResults(onFaceMeshResults);
+        await faceMesh.initialize();
+        faceMeshReady = true;
+        console.log('FaceMesh (468 landmarks) initialized');
     } catch (err) {
-        console.error('FaceDetection init error:', err);
-        faceDetector = null;        // 失敗時はリセットして再試行を許可
-        faceDetectorReady = false;
+        console.error('FaceMesh init error:', err);
+        faceMesh = null;
+        faceMeshReady = false;
     }
 }
 
@@ -734,10 +728,8 @@ function buildFaceFilterUI() {
     if (!container) return;
     container.innerHTML = '';
 
-    // i18n ヘルパー（グローバル t() があれば使用）
     const _t = (key, fallback) => (typeof t === 'function') ? t(key) : fallback;
 
-    // 強度スライダー
     const intensityRow = document.createElement('div');
     intensityRow.className = 'filter-intensity-row';
     intensityRow.innerHTML = `
@@ -757,12 +749,10 @@ function buildFaceFilterUI() {
         valSpan.textContent = slider.value + '%';
     });
 
-    // カテゴリーごとにグループ化してグリッド表示
     FACE_DECORATION_CATEGORIES.forEach(cat => {
         const items = FACE_DECORATIONS.filter(d => d.category === cat.id);
         if (items.length === 0) return;
 
-        // 「なし」以外はカテゴリーヘッダーを表示
         if (cat.id !== 'none_cat') {
             const hdr = document.createElement('div');
             hdr.className = 'face-filter-cat-header';
@@ -771,7 +761,6 @@ function buildFaceFilterUI() {
             container.appendChild(hdr);
         }
 
-        // アイテムをグリッドコンテナに収める
         const grid = document.createElement('div');
         grid.className = 'face-filter-cat-grid';
 
@@ -790,11 +779,9 @@ function buildFaceFilterUI() {
     });
 }
 
-/** デコレーションを選択して即時適用 */
 function selectFaceDecoration(id) {
     currentDecorationId = id;
 
-    // ボタンのアクティブ状態更新
     document.querySelectorAll('.face-filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.id === id);
     });
@@ -807,24 +794,22 @@ function selectFaceDecoration(id) {
         return;
     }
 
-    // 世代を上げることで、既存の async ループを確実に無効化（二重ループ防止）
     faceLoopGen++;
     const myGen = faceLoopGen;
 
     if (faceAnimFrame) { cancelAnimationFrame(faceAnimFrame); faceAnimFrame = null; }
     faceFilterActive = true;
-    resetFaceStates();
+    resetTrackedFaces();
 
-    if (faceDetectorReady) {
+    if (faceMeshReady) {
         startFaceLoop(myGen);
     } else {
         initFaceFilter().then(() => {
-            if (faceFilterActive && faceDetectorReady && myGen === faceLoopGen) {
+            if (faceFilterActive && faceMeshReady && myGen === faceLoopGen) {
                 startFaceLoop(myGen);
             }
         });
     }
 }
 
-/** 現在適用中のデコレーション ID を返す（外部参照用） */
 function getCurrentDecorationId() { return currentDecorationId; }
