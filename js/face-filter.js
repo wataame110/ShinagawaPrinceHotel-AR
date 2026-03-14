@@ -381,9 +381,10 @@ function drawDecoration(ctx, id, c, intensity) {
     const {
         rEye, lEye, rEyeIn, rEyeOut, lEyeIn, lEyeOut,
         rEyeW, lEyeW,
-        rBrowO, lBrowO,
-        noseTip, noseR, noseL, noseW,
-        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY,
+        rBrowO, lBrowO, rBrowIn, lBrowIn,
+        noseTip, noseR, noseL, noseW, noseBottom,
+        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY, mouthH,
+        lipTop, lipBottom, philtrumY,
         forehead, chin, rCheek, lCheek, rTemple, lTemple,
         eyeMidX, eyeMidY, eyeSep,
         faceW, faceH, angle
