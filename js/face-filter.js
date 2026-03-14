@@ -37,27 +37,29 @@ const FACE_DECORATION_CATEGORIES = [
 ];
 
 // ======================================================================
-// デコレーション一覧（15種 + none）
+// デコレーション一覧（17種 + none）
 // ======================================================================
 
 const FACE_DECORATIONS = [
     { id: 'none',           name: 'なし',           icon: '🚫', category: 'none_cat' },
 
-    // ── 目元（6種）
+    // ── 目元（5種）
     { id: 'glasses',        name: 'サングラス',      icon: '😎', category: 'eyes' },
     { id: 'heart_eyes',     name: 'ハートアイ',      icon: '😍', category: 'eyes' },
     { id: 'star_eyes',      name: 'スターアイ',      icon: '🌟', category: 'eyes' },
     { id: 'round_glasses',  name: '丸眼鏡',          icon: '🔵', category: 'eyes' },
-    { id: 'eyepatch',       name: 'アイパッチ',      icon: '🏴‍☠️', category: 'eyes' },
     { id: 'nerd_glasses',   name: 'ナード眼鏡',      icon: '🤓', category: 'eyes' },
 
     // ── 鼻元（2種）
     { id: 'pig_nose',       name: '豚鼻',            icon: '🐽', category: 'nose' },
     { id: 'clown_nose',     name: 'ピエロ鼻',        icon: '🔴', category: 'nose' },
 
-    // ── 口元（2種）
-    { id: 'mustache',       name: '口ひげ',          icon: '🥸', category: 'mouth' },
+    // ── 口元（5種）
     { id: 'lips_red',       name: '赤リップ',        icon: '💋', category: 'mouth' },
+    { id: 'duck_lips',      name: 'ダックマウス',    icon: '🦆', category: 'mouth' },
+    { id: 'vampire_fangs',  name: 'ヴァンパイアファング', icon: '🧛', category: 'mouth' },
+    { id: 'plump_lips',     name: 'ぷっくりリップ',  icon: '👄', category: 'mouth' },
+    { id: 'ice_lips',       name: 'フロストリップ',  icon: '🧊', category: 'mouth' },
 
     // ── アクセサリー（5種）
     { id: 'monocle',        name: '片眼鏡',          icon: '🧐', category: 'accessory' },
@@ -462,26 +464,6 @@ function drawDecoration(ctx, id, c, intensity) {
             break;
         }
 
-        case 'eyepatch': {
-            const epR = eyeSep * 0.32;
-            const epX = rEye.x, epY = rEye.y;
-            ctx.strokeStyle = '#3a2200'; ctx.lineWidth = faceW * 0.022;
-            ctx.beginPath();
-            ctx.moveTo(epX + epR * 0.7, epY - epR * 0.7);
-            ctx.quadraticCurveTo(forehead.x + faceW * 0.05, forehead.y - faceH * 0.02, lTemple.x, lTemple.y - faceH * 0.01);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(epX - epR * 0.7, epY - epR * 0.7);
-            ctx.quadraticCurveTo(rBrowO.x - faceW * 0.08, forehead.y + faceH * 0.01, rTemple.x - faceW * 0.02, rTemple.y);
-            ctx.stroke();
-            ctx.fillStyle = '#1a1a1a';
-            ctx.beginPath(); ctx.arc(epX, epY, epR, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#8B6914'; ctx.lineWidth = faceW * 0.018; ctx.stroke();
-            ctx.fillStyle = 'rgba(255,255,255,0.12)';
-            ctx.beginPath(); ctx.ellipse(epX - epR * 0.28, epY - epR * 0.28, epR * 0.22, epR * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
-            break;
-        }
-
         case 'nerd_glasses': {
             const ngR = eyeSep * 0.28;
             ctx.save();
@@ -536,20 +518,6 @@ function drawDecoration(ctx, id, c, intensity) {
 
         // ── 口元 ──────────────────────────────────────────────────
 
-        case 'mustache': {
-            const muW = mouthW * 0.85, muH = faceH * 0.05;
-            const muX = mouthMidX, muY = philtrumY + faceH * 0.01;
-            ctx.fillStyle = '#2A1A0A';
-            ctx.beginPath();
-            ctx.moveTo(muX, muY);
-            ctx.bezierCurveTo(muX - muW * 0.10, muY - muH,        muX - muW * 0.50, muY - muH * 0.80, muX - muW * 0.52, muY + muH * 0.30);
-            ctx.bezierCurveTo(muX - muW * 0.40, muY + muH * 1.10, muX - muW * 0.12, muY + muH * 0.50, muX,              muY + muH * 0.30);
-            ctx.bezierCurveTo(muX + muW * 0.12, muY + muH * 0.50, muX + muW * 0.40, muY + muH * 1.10, muX + muW * 0.52, muY + muH * 0.30);
-            ctx.bezierCurveTo(muX + muW * 0.50, muY - muH * 0.80, muX + muW * 0.10, muY - muH,        muX,              muY);
-            ctx.closePath(); ctx.fill();
-            break;
-        }
-
         case 'lips_red': {
             const lpW = mouthW * 0.53;
             const lpH = Math.max(mouthH * 0.50, faceH * 0.03);
@@ -572,6 +540,114 @@ function drawDecoration(ctx, id, c, intensity) {
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = 'rgba(255,180,180,0.25)';
             ctx.beginPath(); ctx.ellipse(lpX - lpW * 0.25, lpUpperY - lpH * 0.1, lpW * 0.15, lpH * 0.3, -0.2, 0, Math.PI * 2); ctx.fill();
+            break;
+        }
+
+        case 'duck_lips': {
+            const dkW = mouthW * 0.58;
+            const dkX = mouthMidX;
+            const dkUpperY = mouthU.y;
+            const dkLowerY = mouthD.y;
+            const dkMidY = (dkUpperY + dkLowerY) / 2;
+            const dkH = Math.max(mouthH * 0.55, faceH * 0.035);
+            ctx.fillStyle = '#FF7EB3';
+            ctx.beginPath();
+            ctx.moveTo(dkX - dkW, dkMidY);
+            ctx.bezierCurveTo(dkX - dkW * 0.5, dkUpperY - dkH * 1.6, dkX + dkW * 0.5, dkUpperY - dkH * 1.6, dkX + dkW, dkMidY);
+            ctx.bezierCurveTo(dkX + dkW * 0.3, dkMidY - dkH * 0.1, dkX - dkW * 0.3, dkMidY - dkH * 0.1, dkX - dkW, dkMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#FF69A0';
+            ctx.beginPath();
+            ctx.moveTo(dkX - dkW, dkMidY);
+            ctx.bezierCurveTo(dkX - dkW * 0.5, dkLowerY + dkH * 1.8, dkX + dkW * 0.5, dkLowerY + dkH * 1.8, dkX + dkW, dkMidY);
+            ctx.bezierCurveTo(dkX + dkW * 0.3, dkMidY + dkH * 0.1, dkX - dkW * 0.3, dkMidY + dkH * 0.1, dkX - dkW, dkMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.30)';
+            ctx.beginPath(); ctx.ellipse(dkX, dkUpperY - dkH * 0.5, dkW * 0.2, dkH * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+            break;
+        }
+
+        case 'vampire_fangs': {
+            const vfW = mouthW * 0.50;
+            const vfX = mouthMidX;
+            const vfY = mouthD.y;
+            const fangH = faceH * 0.055;
+            const fangW = faceW * 0.022;
+            const fangGap = vfW * 0.55;
+            [-fangGap / 2, fangGap / 2].forEach(ox => {
+                ctx.fillStyle = '#FAFAFA';
+                ctx.beginPath();
+                ctx.moveTo(vfX + ox - fangW, vfY - fangH * 0.15);
+                ctx.lineTo(vfX + ox, vfY + fangH);
+                ctx.lineTo(vfX + ox + fangW, vfY - fangH * 0.15);
+                ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = '#D0D0D0'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.beginPath();
+                ctx.moveTo(vfX + ox - fangW * 0.5, vfY);
+                ctx.lineTo(vfX + ox - fangW * 0.15, vfY + fangH * 0.5);
+                ctx.lineTo(vfX + ox + fangW * 0.1, vfY);
+                ctx.closePath(); ctx.fill();
+            });
+            ctx.fillStyle = 'rgba(180, 0, 0, 0.6)';
+            ctx.beginPath(); ctx.ellipse(vfX + fangGap / 2 - fangW * 0.2, vfY + fangH * 0.8, fangW * 0.4, fangW * 0.3, 0.2, 0, Math.PI * 2); ctx.fill();
+            break;
+        }
+
+        case 'plump_lips': {
+            const plW = mouthW * 0.58;
+            const plH = Math.max(mouthH * 0.60, faceH * 0.038);
+            const plX = mouthMidX;
+            const plUpperY = mouthU.y;
+            const plLowerY = mouthD.y;
+            const plMidY = (plUpperY + plLowerY) / 2;
+            ctx.fillStyle = '#E85070';
+            ctx.beginPath();
+            ctx.moveTo(plX - plW, plMidY);
+            ctx.bezierCurveTo(plX - plW * 0.55, plUpperY - plH * 0.8, plX - plW * 0.15, plUpperY - plH * 1.1, plX, plUpperY - plH * 0.2);
+            ctx.bezierCurveTo(plX + plW * 0.15, plUpperY - plH * 1.1, plX + plW * 0.55, plUpperY - plH * 0.8, plX + plW, plMidY);
+            ctx.bezierCurveTo(plX + plW * 0.35, plMidY + plH * 0.05, plX - plW * 0.35, plMidY + plH * 0.05, plX - plW, plMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#FF6888';
+            ctx.beginPath();
+            ctx.moveTo(plX - plW, plMidY);
+            ctx.bezierCurveTo(plX - plW * 0.40, plLowerY + plH * 1.2, plX + plW * 0.40, plLowerY + plH * 1.2, plX + plW, plMidY);
+            ctx.bezierCurveTo(plX + plW * 0.35, plMidY + plH * 0.1, plX - plW * 0.35, plMidY + plH * 0.1, plX - plW, plMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,200,200,0.35)';
+            ctx.beginPath(); ctx.ellipse(plX - plW * 0.2, plUpperY - plH * 0.05, plW * 0.18, plH * 0.22, -0.15, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(plX, plLowerY + plH * 0.3, plW * 0.25, plH * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+            break;
+        }
+
+        case 'ice_lips': {
+            const ilW = mouthW * 0.54;
+            const ilH = Math.max(mouthH * 0.50, faceH * 0.03);
+            const ilX = mouthMidX;
+            const ilUpperY = mouthU.y;
+            const ilLowerY = mouthD.y;
+            const ilMidY = (ilUpperY + ilLowerY) / 2;
+            ctx.fillStyle = '#3A7BD5';
+            ctx.beginPath();
+            ctx.moveTo(ilX - ilW, ilMidY);
+            ctx.bezierCurveTo(ilX - ilW * 0.55, ilUpperY - ilH * 0.9, ilX - ilW * 0.18, ilUpperY - ilH * 1.2, ilX, ilUpperY - ilH * 0.3);
+            ctx.bezierCurveTo(ilX + ilW * 0.18, ilUpperY - ilH * 1.2, ilX + ilW * 0.55, ilUpperY - ilH * 0.9, ilX + ilW, ilMidY);
+            ctx.bezierCurveTo(ilX + ilW * 0.40, ilMidY + ilH * 0.1, ilX - ilW * 0.40, ilMidY + ilH * 0.1, ilX - ilW, ilMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#2060C0';
+            ctx.beginPath();
+            ctx.moveTo(ilX - ilW, ilMidY);
+            ctx.bezierCurveTo(ilX - ilW * 0.45, ilLowerY + ilH * 0.6, ilX + ilW * 0.45, ilLowerY + ilH * 0.6, ilX + ilW, ilMidY);
+            ctx.bezierCurveTo(ilX + ilW * 0.40, ilMidY + ilH * 0.15, ilX - ilW * 0.40, ilMidY + ilH * 0.15, ilX - ilW, ilMidY);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(180,220,255,0.40)';
+            ctx.beginPath(); ctx.ellipse(ilX - ilW * 0.25, ilUpperY - ilH * 0.1, ilW * 0.14, ilH * 0.25, -0.2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.20)';
+            for (let i = 0; i < 5; i++) {
+                const sx = ilX - ilW * 0.4 + ilW * 0.8 * Math.random();
+                const sy = ilMidY - ilH * 0.3 + ilH * 0.6 * Math.random();
+                ctx.beginPath(); ctx.arc(sx, sy, faceW * 0.004, 0, Math.PI * 2); ctx.fill();
+            }
             break;
         }
 
