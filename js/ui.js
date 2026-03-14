@@ -73,7 +73,10 @@ async function loadFramesConfig() {
         if (defaultFrame) {
             currentFrameId = defaultFrame.id;
             loadFrameImage(defaultFrame.path);
-            if (frameOverlay) frameOverlay.src = defaultFrame.path;
+            if (frameOverlay) {
+                frameOverlay.src = defaultFrame.path;
+                frameOverlay.style.opacity = '1';
+            }
         } else {
             currentFrameId = 'no_frame';
         }
@@ -219,15 +222,13 @@ function updatePreviewGuide() {
     const cfg = (typeof messageConfig !== 'undefined') ? messageConfig : null;
     if (!cfg) return;
 
-    // 現在の言語コード（i18n.js の currentLang を参照）
     const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ja';
 
-    const lines = [];
+    const parts = [];
     if (cfg.date.enabled && cfg.date.value) {
-        const parts = cfg.date.value.split('-').map(Number);
-        const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(cfg.date.value);
+        const nums = cfg.date.value.split('-').map(Number);
+        const d = nums.length === 3 ? new Date(nums[0], nums[1] - 1, nums[2]) : new Date(cfg.date.value);
         if (!isNaN(d)) {
-            // ロケール対応の日付フォーマット
             const localeMap = {
                 'ja': 'ja-JP', 'en': 'en-US', 'zh': 'zh-CN', 'zh-TW': 'zh-TW',
                 'ko': 'ko-KR', 'fr': 'fr-FR', 'es': 'es-ES', 'de': 'de-DE', 'pt': 'pt-PT'
@@ -235,25 +236,56 @@ function updatePreviewGuide() {
             const locale = localeMap[lang] || 'en-US';
             try {
                 const fmt = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' });
-                lines.push(`📅 ${fmt.format(d)}`);
+                parts.push(fmt.format(d));
             } catch (_) {
-                // Intl 非対応ブラウザ向けフォールバック
-                lines.push(`📅 ${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`);
+                parts.push(`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`);
             }
         }
     }
-    if (cfg.text.enabled     && cfg.text.value)     lines.push(`💐 ${cfg.text.value}`);
-    if (cfg.location.enabled && cfg.location.value) lines.push(`📍 ${cfg.location.value}`);
+    if (cfg.text.enabled     && cfg.text.value)     parts.push(cfg.text.value);
+    if (cfg.location.enabled && cfg.location.value) parts.push(cfg.location.value);
 
-    // フォールバックテキストを多言語対応（t() が使用可能な場合）
     const fallback = (typeof t === 'function') ? t('preview_guide_hint') : 'フレーム内に収まるよう調整してください';
-    previewGuideText.innerHTML = lines.length ? lines.join('<br>') : (fallback || 'フレーム内に収まるよう調整してください');
+    const text = parts.length ? parts.join('　') : (fallback || '');
+    previewGuideText.textContent = text;
 
-    // 書体・サイズをプレビューに即時反映
     if (cfg.style) {
         if (cfg.style.fontFamily) previewGuideText.style.fontFamily = cfg.style.fontFamily;
-        if (cfg.style.fontSize)   previewGuideText.style.fontSize   = cfg.style.fontSize + 'px';
     }
+
+    fitPreviewText();
+}
+
+function fitPreviewText() {
+    if (!previewGuideText) return;
+    const container = previewGuideText.parentElement;
+    if (!container) return;
+
+    const maxFontPx = 11;
+    const minFontPx = 5;
+    const padH = 20;
+    const availW = container.clientWidth - padH;
+
+    if (availW <= 0) {
+        previewGuideText.style.fontSize = maxFontPx + 'px';
+        return;
+    }
+
+    previewGuideText.style.fontSize = maxFontPx + 'px';
+
+    if (previewGuideText.scrollWidth <= availW) return;
+
+    let lo = minFontPx, hi = maxFontPx;
+    while (hi - lo > 0.5) {
+        const mid = (lo + hi) / 2;
+        previewGuideText.style.fontSize = mid + 'px';
+        if (previewGuideText.scrollWidth > availW) {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    previewGuideText.style.fontSize = lo + 'px';
 }
 
 function applyMessageSettings() {

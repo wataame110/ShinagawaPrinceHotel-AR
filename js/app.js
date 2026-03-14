@@ -176,9 +176,15 @@ window.addEventListener('load', async () => {
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
     setVH();
-    window.addEventListener('resize', setVH);
+    window.addEventListener('resize', () => {
+        setVH();
+        if (typeof fitPreviewText === 'function') fitPreviewText();
+    });
     window.addEventListener('orientationchange', () => {
-        setTimeout(setVH, 200);
+        setTimeout(() => {
+            setVH();
+            if (typeof fitPreviewText === 'function') fitPreviewText();
+        }, 200);
     });
 
     // ======================================================

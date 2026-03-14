@@ -700,7 +700,7 @@ async function initFaceFilter() {
     }
     try {
         faceMesh = new FaceMesh({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${f}`
+            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
         });
         faceMesh.setOptions({
             maxNumFaces: MAX_TRACKED_FACES,
