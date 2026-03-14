@@ -136,6 +136,7 @@ async function switchCamera() {
     const newMode = currentFacingMode === 'user' ? 'environment' : 'user';
 
     await initCamera(newMode);
+    if (typeof trackCameraSwitch === 'function') trackCameraSwitch(newMode);
 
     if (switchCameraBtn) switchCameraBtn.disabled = false;
 }

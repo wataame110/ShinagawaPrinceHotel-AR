@@ -106,6 +106,10 @@ function getCurrentFilter() {
 function setFilter(filterId) {
     currentFilterId = filterId;
     applyFilterToPreview();
+    if (typeof trackFilterUse === 'function') {
+        var f = FILTERS.find(function(x){ return x.id === filterId; });
+        trackFilterUse(f ? f.name : filterId);
+    }
 }
 
 /**

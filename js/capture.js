@@ -119,6 +119,11 @@ function captureImage() {
         }
 
         showScreen('result');
+        if (typeof trackPhotoCapture === 'function') {
+            var _fn = (typeof currentFrameName !== 'undefined') ? currentFrameName : '';
+            var _fl = (typeof getCurrentFilter === 'function' && getCurrentFilter()) ? getCurrentFilter().name : '';
+            trackPhotoCapture(_fn, _fl);
+        }
 
     } catch (err) {
         console.error('captureImage error:', err);
@@ -274,7 +279,8 @@ async function downloadImage() {
                     files: [file],
                     title: '品川プリンスホテル フォト'
                 });
-                return; // シェアシートが開いた → 完了（「写真に保存」を選択）
+                if (typeof trackPhotoSave === 'function') trackPhotoSave('share_api');
+                return;
             } catch (err) {
                 if (err.name === 'AbortError') return; // ユーザーがキャンセル
                 // SecurityError: ユーザージェスチャーなしで呼ばれた場合など
@@ -291,6 +297,7 @@ async function downloadImage() {
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
+        if (typeof trackPhotoSave === 'function') trackPhotoSave('download');
         setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 300);
 
     } catch (err) {

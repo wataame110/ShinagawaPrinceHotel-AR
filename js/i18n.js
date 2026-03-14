@@ -762,6 +762,7 @@ function setLanguage(lang) {
     if (!I18N_TRANSLATIONS[lang]) return;
     currentLang = lang;
     localStorage.setItem('sph_lang', lang);
+    if (typeof trackLangChange === 'function') trackLangChange(lang);
     applyTranslations();
     // デフォルトメッセージ文字列を言語に合わせて更新
     const msgInput = document.getElementById('message-text');

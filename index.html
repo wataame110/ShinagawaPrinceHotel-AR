@@ -13,6 +13,15 @@
     <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon.ico">
 
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FN6X4ZH0QT"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FN6X4ZH0QT');
+    </script>
+
     <!-- 認証チェック（最初に実行） -->
     <script>
     (function() {
@@ -149,7 +158,7 @@
                 </div>
 
                 <!-- 書体・サイズ・位置カスタマイズ -->
-                <!-- <div class="form-group msg-style-group">
+                <div class="form-group msg-style-group">
                     <label class="msg-style-label" data-i18n="msg_font_label">書体</label>
                     <select id="msg-font-select" class="form-input">
                         <option value="'MS Gothic', 'MS ゴシック', sans-serif">MS ゴシック</option>
@@ -166,7 +175,7 @@
                         <option value="'Kfont', sans-serif">けいふぉんと！</option>
                         <option value="'Ranobe POP', sans-serif">ラノベPOP</option>
                     </select>
-                </div> -->
+                </div>
                 <div class="form-row-2col">
                     <div class="form-group">
                         <label class="msg-style-label" data-i18n="msg_size_label">サイズ</label>
@@ -244,6 +253,7 @@
      app.js（DOM変数定義）→ モジュール群 → ui.js（イベント登録）
      ================================================================ -->
 <script src="js/i18n.js"></script>
+<script src="js/analytics.js"></script>
 <script src="js/app.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/filter.js"></script>

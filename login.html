@@ -18,6 +18,15 @@
     <link rel="stylesheet" href="css/reset.css">
     <link rel="stylesheet" href="css/login.css">
 
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FN6X4ZH0QT"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FN6X4ZH0QT');
+    </script>
+
     <!-- i18n を最初に読み込む（スクリプト内で t() を使用するため） -->
     <script src="js/i18n.js"></script>
 </head>
@@ -188,6 +197,13 @@
                 sessionStorage.setItem('authenticated',   'true');
                 sessionStorage.setItem('restaurantId',    authenticatedRestaurant.id);
                 sessionStorage.setItem('restaurantName',  authenticatedRestaurant.name);
+                if (typeof gtag === 'function') {
+                    gtag('event', 'login', {
+                        method: 'password',
+                        restaurant_id: authenticatedRestaurant.id,
+                        restaurant_name: authenticatedRestaurant.name
+                    });
+                }
                 window.location.href = `index.html?restaurant=${authenticatedRestaurant.id}`;
             } else {
                 showError(typeof t === 'function'

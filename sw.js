@@ -8,7 +8,7 @@
  *  - JSON / 設定ファイルはネットワーク優先
  */
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v12';
 const CACHE_NAME    = `sph-photo-${CACHE_VERSION}`;
 
 // ── 事前キャッシュするコアアセット（確実に存在するもののみ）──────────
@@ -27,6 +27,7 @@ const CORE_ASSETS = [
     './js/filter.js',
     './js/face-filter.js',
     './js/sound.js',
+    './js/analytics.js',
     './assets/images/logo-shinagawa-prince.png',
 ];
 

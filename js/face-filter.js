@@ -192,6 +192,9 @@ function extractCoords(landmarks, state, W, H) {
     const mouthD  = p(LM.LOWER_LIP);
     const mouthL  = p(LM.MOUTH_LEFT);
     const mouthR  = p(LM.MOUTH_RIGHT);
+    const lipTop     = p(LM.UPPER_LIP_TOP);
+    const lipBottom  = p(LM.LOWER_LIP_BOTTOM);
+    const noseBottom = p(LM.NOSE_BOTTOM);
 
     const forehead = p(LM.FOREHEAD);
     const chin     = p(LM.CHIN);
@@ -199,6 +202,9 @@ function extractCoords(landmarks, state, W, H) {
     const lCheek   = p(LM.LEFT_CHEEK);
     const rTemple  = p(LM.RIGHT_TEMPLE);
     const lTemple  = p(LM.LEFT_TEMPLE);
+
+    const rBrowIn = p(LM.RIGHT_BROW_INNER);
+    const lBrowIn = p(LM.LEFT_BROW_INNER);
 
     const eyeMidX = (rEye.x + lEye.x) / 2;
     const eyeMidY = (rEye.y + lEye.y) / 2;
@@ -215,8 +221,10 @@ function extractCoords(landmarks, state, W, H) {
     const mouthW = Math.hypot(mouthL.x - mouthR.x, mouthL.y - mouthR.y);
     const mouthMidX = (mouthL.x + mouthR.x) / 2;
     const mouthMidY = (mouthU.y + mouthD.y) / 2;
+    const mouthH = Math.abs(lipTop.y - lipBottom.y);
 
     const noseW = Math.hypot(noseR.x - noseL.x, noseR.y - noseL.y);
+    const philtrumY = (noseBottom.y + lipTop.y) / 2;
 
     const angle = Math.atan2(lEye.y - rEye.y, lEye.x - rEye.x);
 
@@ -224,9 +232,10 @@ function extractCoords(landmarks, state, W, H) {
         rEye, lEye, rEyeIn, rEyeOut, lEyeIn, lEyeOut,
         rEyeT, rEyeB, lEyeT, lEyeB,
         rEyeW, lEyeW, rEyeH, lEyeH,
-        rBrowO, lBrowO,
-        noseTip, noseBr, noseR, noseL, noseW,
-        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY,
+        rBrowO, lBrowO, rBrowIn, lBrowIn,
+        noseTip, noseBr, noseR, noseL, noseW, noseBottom,
+        mouthU, mouthD, mouthL, mouthR, mouthW, mouthMidX, mouthMidY, mouthH,
+        lipTop, lipBottom, philtrumY,
         forehead, chin, rCheek, lCheek, rTemple, lTemple,
         eyeMidX, eyeMidY, eyeSep,
         faceW, faceH, angle,
@@ -456,12 +465,18 @@ function drawDecoration(ctx, id, c, intensity) {
         case 'eyepatch': {
             const epR = eyeSep * 0.32;
             const epX = rEye.x, epY = rEye.y;
+            ctx.strokeStyle = '#3a2200'; ctx.lineWidth = faceW * 0.022;
+            ctx.beginPath();
+            ctx.moveTo(epX + epR * 0.7, epY - epR * 0.7);
+            ctx.quadraticCurveTo(forehead.x + faceW * 0.05, forehead.y - faceH * 0.02, lTemple.x, lTemple.y - faceH * 0.01);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(epX - epR * 0.7, epY - epR * 0.7);
+            ctx.quadraticCurveTo(rBrowO.x - faceW * 0.08, forehead.y + faceH * 0.01, rTemple.x - faceW * 0.02, rTemple.y);
+            ctx.stroke();
             ctx.fillStyle = '#1a1a1a';
             ctx.beginPath(); ctx.arc(epX, epY, epR, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = '#8B6914'; ctx.lineWidth = faceW * 0.018; ctx.stroke();
-            ctx.strokeStyle = '#2a1a00'; ctx.lineWidth = faceW * 0.02;
-            ctx.beginPath(); ctx.moveTo(epX - epR, epY); ctx.lineTo(rTemple.x, rTemple.y); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(epX + epR, epY); ctx.lineTo(lTemple.x, lTemple.y); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.12)';
             ctx.beginPath(); ctx.ellipse(epX - epR * 0.28, epY - epR * 0.28, epR * 0.22, epR * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
             break;
@@ -493,16 +508,18 @@ function drawDecoration(ctx, id, c, intensity) {
         case 'pig_nose': {
             const pnRx = noseW * 0.70;
             const pnRy = pnRx * 0.65;
+            const pnX = noseTip.x;
+            const pnY = (noseTip.y + noseBottom.y) / 2;
             ctx.fillStyle = '#FF8DA0';
-            ctx.beginPath(); ctx.ellipse(noseTip.x, noseTip.y, pnRx, pnRy, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(pnX, pnY, pnRx, pnRy, 0, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = '#FF6070'; ctx.lineWidth = faceW * 0.014; ctx.stroke();
             ctx.fillStyle = 'rgba(120,40,60,0.72)';
             const nh = noseW * 0.22;
             [[-pnRx * 0.36, 0], [pnRx * 0.36, 0]].forEach(([ox, oy]) => {
-                ctx.beginPath(); ctx.ellipse(noseTip.x + ox, noseTip.y + oy, nh, nh * 0.82, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(pnX + ox, pnY + oy, nh, nh * 0.82, 0, 0, Math.PI * 2); ctx.fill();
             });
             ctx.fillStyle = 'rgba(255,255,255,0.28)';
-            ctx.beginPath(); ctx.ellipse(noseTip.x - pnRx * 0.3, noseTip.y - pnRy * 0.35, pnRx * 0.2, pnRy * 0.16, -0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(pnX - pnRx * 0.3, pnY - pnRy * 0.35, pnRx * 0.2, pnRy * 0.16, -0.4, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
@@ -520,35 +537,41 @@ function drawDecoration(ctx, id, c, intensity) {
         // ── 口元 ──────────────────────────────────────────────────
 
         case 'mustache': {
-            const muW = mouthW * 0.75, muH = faceH * 0.045;
-            const muX = mouthMidX, muY = mouthU.y - faceH * 0.02;
+            const muW = mouthW * 0.85, muH = faceH * 0.05;
+            const muX = mouthMidX, muY = philtrumY + faceH * 0.01;
             ctx.fillStyle = '#2A1A0A';
             ctx.beginPath();
             ctx.moveTo(muX, muY);
             ctx.bezierCurveTo(muX - muW * 0.10, muY - muH,        muX - muW * 0.50, muY - muH * 0.80, muX - muW * 0.52, muY + muH * 0.30);
-            ctx.bezierCurveTo(muX - muW * 0.40, muY + muH * 1.20, muX - muW * 0.12, muY + muH * 0.50, muX,              muY + muH * 0.30);
-            ctx.bezierCurveTo(muX + muW * 0.12, muY + muH * 0.50, muX + muW * 0.40, muY + muH * 1.20, muX + muW * 0.52, muY + muH * 0.30);
+            ctx.bezierCurveTo(muX - muW * 0.40, muY + muH * 1.10, muX - muW * 0.12, muY + muH * 0.50, muX,              muY + muH * 0.30);
+            ctx.bezierCurveTo(muX + muW * 0.12, muY + muH * 0.50, muX + muW * 0.40, muY + muH * 1.10, muX + muW * 0.52, muY + muH * 0.30);
             ctx.bezierCurveTo(muX + muW * 0.50, muY - muH * 0.80, muX + muW * 0.10, muY - muH,        muX,              muY);
             ctx.closePath(); ctx.fill();
             break;
         }
 
         case 'lips_red': {
-            const lpW = mouthW * 0.55, lpH = faceH * 0.04;
-            const lpX = mouthMidX, lpY = mouthMidY;
+            const lpW = mouthW * 0.53;
+            const lpH = Math.max(mouthH * 0.50, faceH * 0.03);
+            const lpX = mouthMidX;
+            const lpUpperY = mouthU.y;
+            const lpLowerY = mouthD.y;
+            const lpMidY = (lpUpperY + lpLowerY) / 2;
             ctx.fillStyle = '#C00020';
             ctx.beginPath();
-            ctx.moveTo(lpX - lpW, lpY);
-            ctx.bezierCurveTo(lpX - lpW * 0.60, lpY - lpH * 1.20, lpX - lpW * 0.20, lpY - lpH * 1.60, lpX, lpY - lpH * 1.0);
-            ctx.bezierCurveTo(lpX + lpW * 0.20, lpY - lpH * 1.60, lpX + lpW * 0.60, lpY - lpH * 1.20, lpX + lpW, lpY);
-            ctx.bezierCurveTo(lpX + lpW * 0.40, lpY + lpH * 0.10, lpX - lpW * 0.40, lpY + lpH * 0.10, lpX - lpW, lpY);
+            ctx.moveTo(lpX - lpW, lpMidY);
+            ctx.bezierCurveTo(lpX - lpW * 0.55, lpUpperY - lpH * 0.9, lpX - lpW * 0.18, lpUpperY - lpH * 1.2, lpX, lpUpperY - lpH * 0.3);
+            ctx.bezierCurveTo(lpX + lpW * 0.18, lpUpperY - lpH * 1.2, lpX + lpW * 0.55, lpUpperY - lpH * 0.9, lpX + lpW, lpMidY);
+            ctx.bezierCurveTo(lpX + lpW * 0.40, lpMidY + lpH * 0.1, lpX - lpW * 0.40, lpMidY + lpH * 0.1, lpX - lpW, lpMidY);
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#E0003A';
             ctx.beginPath();
-            ctx.moveTo(lpX - lpW, lpY + lpH * 0.1);
-            ctx.bezierCurveTo(lpX - lpW * 0.50, lpY + lpH * 1.80, lpX + lpW * 0.50, lpY + lpH * 1.80, lpX + lpW, lpY + lpH * 0.1);
-            ctx.bezierCurveTo(lpX + lpW * 0.40, lpY + lpH * 0.2, lpX - lpW * 0.40, lpY + lpH * 0.2, lpX - lpW, lpY + lpH * 0.1);
+            ctx.moveTo(lpX - lpW, lpMidY);
+            ctx.bezierCurveTo(lpX - lpW * 0.45, lpLowerY + lpH * 0.6, lpX + lpW * 0.45, lpLowerY + lpH * 0.6, lpX + lpW, lpMidY);
+            ctx.bezierCurveTo(lpX + lpW * 0.40, lpMidY + lpH * 0.15, lpX - lpW * 0.40, lpMidY + lpH * 0.15, lpX - lpW, lpMidY);
             ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,180,180,0.25)';
+            ctx.beginPath(); ctx.ellipse(lpX - lpW * 0.25, lpUpperY - lpH * 0.1, lpW * 0.15, lpH * 0.3, -0.2, 0, Math.PI * 2); ctx.fill();
             break;
         }
 
@@ -561,9 +584,11 @@ function drawDecoration(ctx, id, c, intensity) {
             ctx.beginPath(); ctx.arc(rEye.x, rEye.y, moR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             ctx.strokeStyle = '#B8962A'; ctx.lineWidth = faceW * 0.012;
             ctx.setLineDash([faceW * 0.015, faceW * 0.01]);
+            const chainEndX = rCheek.x + faceW * 0.03;
+            const chainEndY = chin.y - faceH * 0.08;
             ctx.beginPath();
-            ctx.moveTo(rEye.x + moR * 0.6, rEye.y + moR);
-            ctx.quadraticCurveTo(rCheek.x, chin.y * 0.6 + rCheek.y * 0.4, rCheek.x + faceW * 0.05, chin.y - faceH * 0.15);
+            ctx.moveTo(rEye.x + moR * 0.5, rEye.y + moR * 0.85);
+            ctx.bezierCurveTo(rEye.x + moR, rCheek.y, rCheek.x + faceW * 0.06, rCheek.y + faceH * 0.08, chainEndX, chainEndY);
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.fillStyle = 'rgba(255,255,255,0.25)';
@@ -572,8 +597,8 @@ function drawDecoration(ctx, id, c, intensity) {
         }
 
         case 'flower_crown': {
-            const fcY = forehead.y - faceH * 0.04;
-            const crownW = faceW * 0.65;
+            const fcY = forehead.y - faceH * 0.07;
+            const crownW = faceW * 0.72;
             const colors6 = ['#FF6B9E', '#FF9A3C', '#FFD700', '#6BD96B', '#6BAAFF', '#D06BFF'];
             for (let i = 0; i < 9; i++) {
                 const t = i / 8;
@@ -647,8 +672,8 @@ function drawDecoration(ctx, id, c, intensity) {
         }
 
         case 'diamond_tiara': {
-            const dtY = forehead.y;
-            const dtW = faceW * 0.60;
+            const dtY = forehead.y - faceH * 0.02;
+            const dtW = faceW * 0.65;
             const bandGrad = ctx.createLinearGradient(eyeMidX - dtW / 2, dtY, eyeMidX + dtW / 2, dtY);
             bandGrad.addColorStop(0, '#B8860B'); bandGrad.addColorStop(0.5, '#FFD700'); bandGrad.addColorStop(1, '#B8860B');
             ctx.save();
@@ -784,6 +809,7 @@ function buildFaceFilterUI() {
 
 function selectFaceDecoration(id) {
     currentDecorationId = id;
+    if (typeof trackFaceDecoUse === 'function') trackFaceDecoUse(id);
 
     document.querySelectorAll('.face-filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.id === id);

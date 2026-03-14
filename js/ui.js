@@ -13,7 +13,7 @@ function showScreen(name) {
     cameraScreen.classList.remove('active');
     resultScreen.classList.remove('active');
     errorScreen.classList.remove('active');
-    if (name === 'camera')  cameraScreen.classList.add('active');
+    if (name === 'camera')  { cameraScreen.classList.add('active'); if (typeof trackCameraView === 'function') trackCameraView(); }
     if (name === 'result')  resultScreen.classList.add('active');
     if (name === 'error')   errorScreen.classList.add('active');
 }
@@ -198,6 +198,7 @@ function selectFrame(frameId) {
     document.querySelectorAll('.frame-item').forEach(el => {
         el.classList.toggle('selected', el.dataset.frameId === frameId);
     });
+    if (typeof trackFrameSelect === 'function') trackFrameSelect(frame ? frame.name : 'none');
     closeFrameSelector();
     hidePanelOverlay();
 }
@@ -312,6 +313,7 @@ function applyMessageSettings() {
     };
 
     updatePreviewGuide();
+    if (typeof trackMessageEdit === 'function') trackMessageEdit();
     closeMessageEditor();
     hidePanelOverlay();
 }
