@@ -224,7 +224,7 @@ function updatePreviewGuide() {
 
     const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ja';
 
-    const parts = [];
+    const lines = [];
     if (cfg.date.enabled && cfg.date.value) {
         const nums = cfg.date.value.split('-').map(Number);
         const d = nums.length === 3 ? new Date(nums[0], nums[1] - 1, nums[2]) : new Date(cfg.date.value);
@@ -236,56 +236,61 @@ function updatePreviewGuide() {
             const locale = localeMap[lang] || 'en-US';
             try {
                 const fmt = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' });
-                parts.push(fmt.format(d));
+                lines.push(fmt.format(d));
             } catch (_) {
-                parts.push(`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`);
+                lines.push(`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`);
             }
         }
     }
-    if (cfg.text.enabled     && cfg.text.value)     parts.push(cfg.text.value);
-    if (cfg.location.enabled && cfg.location.value) parts.push(cfg.location.value);
+    if (cfg.text.enabled     && cfg.text.value)     lines.push(cfg.text.value);
+    if (cfg.location.enabled && cfg.location.value) lines.push(cfg.location.value);
 
-    const fallback = (typeof t === 'function') ? t('preview_guide_hint') : 'フレーム内に収まるよう調整してください';
-    const text = parts.length ? parts.join('　') : (fallback || '');
-    previewGuideText.textContent = text;
+    previewGuideText.innerHTML = '';
 
-    if (cfg.style) {
-        if (cfg.style.fontFamily) previewGuideText.style.fontFamily = cfg.style.fontFamily;
+    if (lines.length === 0) {
+        const fallback = (typeof t === 'function') ? t('preview_guide_hint') : 'フレーム内に収まるよう調整してください';
+        const span = document.createElement('span');
+        span.className = 'preview-guide-line';
+        span.textContent = fallback || '';
+        previewGuideText.appendChild(span);
+    } else {
+        lines.forEach(text => {
+            const span = document.createElement('span');
+            span.className = 'preview-guide-line';
+            span.textContent = text;
+            if (cfg.style && cfg.style.fontFamily) {
+                span.style.fontFamily = cfg.style.fontFamily;
+            }
+            previewGuideText.appendChild(span);
+        });
     }
 
     fitPreviewText();
 }
 
 function fitPreviewText() {
-    if (!previewGuideText) return;
+    const spans = previewGuideText ? previewGuideText.querySelectorAll('.preview-guide-line') : [];
+    if (!spans.length) return;
     const container = previewGuideText.parentElement;
     if (!container) return;
 
     const maxFontPx = 11;
     const minFontPx = 5;
-    const padH = 20;
-    const availW = container.clientWidth - padH;
+    const availW = container.clientWidth - 20;
+    if (availW <= 0) return;
 
-    if (availW <= 0) {
-        previewGuideText.style.fontSize = maxFontPx + 'px';
-        return;
-    }
+    spans.forEach(span => {
+        span.style.fontSize = maxFontPx + 'px';
+        if (span.scrollWidth <= availW) return;
 
-    previewGuideText.style.fontSize = maxFontPx + 'px';
-
-    if (previewGuideText.scrollWidth <= availW) return;
-
-    let lo = minFontPx, hi = maxFontPx;
-    while (hi - lo > 0.5) {
-        const mid = (lo + hi) / 2;
-        previewGuideText.style.fontSize = mid + 'px';
-        if (previewGuideText.scrollWidth > availW) {
-            hi = mid;
-        } else {
-            lo = mid;
+        let lo = minFontPx, hi = maxFontPx;
+        while (hi - lo > 0.5) {
+            const mid = (lo + hi) / 2;
+            span.style.fontSize = mid + 'px';
+            if (span.scrollWidth > availW) { hi = mid; } else { lo = mid; }
         }
-    }
-    previewGuideText.style.fontSize = lo + 'px';
+        span.style.fontSize = lo + 'px';
+    });
 }
 
 function applyMessageSettings() {

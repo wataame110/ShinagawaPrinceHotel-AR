@@ -105,10 +105,13 @@ function matchAndTrack(faces) {
     const matched = new Map();
     for (const tf of trackedFaces) tf.missed++;
 
+    const canvasMax = faceCanvas ? Math.max(faceCanvas.width, faceCanvas.height) : 500;
+    const matchThreshold = canvasMax * 0.25;
+
     for (let fi = 0; fi < faces.length; fi++) {
         const lm = faces[fi];
         const cx = lm[1].x, cy = lm[1].y;
-        let bestDist = 0.25, bestTF = null;
+        let bestDist = matchThreshold, bestTF = null;
 
         for (const tf of trackedFaces) {
             if ([...matched.values()].includes(tf)) continue;
@@ -162,7 +165,7 @@ const LM = {
 function extractCoords(landmarks, state, W, H) {
     const p = (idx) => {
         const raw = landmarks[idx];
-        const sm = smoothLandmark(state, idx, raw.x * W, raw.y * H);
+        const sm = smoothLandmark(state, idx, raw.x, raw.y);
         return sm;
     };
 
@@ -241,7 +244,7 @@ function startFaceLoop(gen) {
         if (gen !== faceLoopGen || !faceFilterActive) return;
         if (cameraVideo && cameraVideo.readyState >= 2) {
             syncFaceCanvas();
-            try { await faceMesh.send({ image: cameraVideo }); } catch (_) {}
+            try { await faceMesh.send({ image: cameraVideo }); } catch (e) { console.warn('FaceMesh send error:', e.message || e); }
         }
         if (faceFilterActive && gen === faceLoopGen) startFaceLoop(gen);
     });
@@ -700,13 +703,13 @@ async function initFaceFilter() {
     }
     try {
         faceMesh = new FaceMesh({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${f}`
         });
         faceMesh.setOptions({
             maxNumFaces: MAX_TRACKED_FACES,
             refineLandmarks: true,
-            minDetectionConfidence: 0.55,
-            minTrackingConfidence: 0.50
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
         faceMesh.onResults(onFaceMeshResults);
         await faceMesh.initialize();

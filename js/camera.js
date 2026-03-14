@@ -28,8 +28,8 @@ async function initCamera(facingMode) {
         const constraints = {
             video: {
                 facingMode: { ideal: currentFacingMode },
-                width:  { ideal: 4096 },
-                height: { ideal: 2160 }
+                width:  { ideal: 1920, min: 640 },
+                height: { ideal: 1080, min: 480 }
             },
             audio: false
         };
