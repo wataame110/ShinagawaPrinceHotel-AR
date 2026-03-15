@@ -78,7 +78,7 @@ const I18N_TRANSLATIONS = {
 
         // 結果画面
         result_title:       '撮影完了',
-        save_hint:          '写真を長押しで「カメラロールに保存」／「保存する」ボタン→「写真に保存」を選択',
+        save_hint:          '画像を長押しして「写真に保存」もできます',
 
         // 共通
         close:              '✕',
@@ -159,7 +159,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         'None',
         result_title:       'Photo Taken',
-        save_hint:          'Long-press photo to save / Tap "Save Photo" → "Save Image"',
+        save_hint:          'Long-press image to "Save to Photos"',
 
         close:              '✕',
         loading:            'Loading...',
@@ -238,7 +238,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         '无',
         result_title:       '拍摄完成',
-        save_hint:          '长按照片可保存 / 点击"保存照片"→"存储图像"',
+        save_hint:          '长按图片可直接保存到相册',
 
         close:              '✕',
         loading:            '加载中...',
@@ -317,7 +317,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         '無',
         result_title:       '拍攝完成',
-        save_hint:          '長按照片可儲存 / 點擊「儲存照片」→「儲存影像」',
+        save_hint:          '長按圖片可直接儲存到相簿',
 
         close:              '✕',
         loading:            '載入中...',
@@ -396,7 +396,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         '없음',
         result_title:       '촬영 완료',
-        save_hint:          '사진 길게 눌러 저장 / "저장" 버튼 → "이미지 저장" 선택',
+        save_hint:          '이미지를 길게 눌러 사진에 저장할 수 있습니다',
 
         close:              '✕',
         loading:            '로딩 중...',
@@ -475,7 +475,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         'Aucun',
         result_title:       'Photo prise',
-        save_hint:          'Appui long sur la photo pour sauvegarder / Bouton "Enregistrer" → "Enregistrer l\'image"',
+        save_hint:          'Appui long sur l\'image pour enregistrer dans Photos',
 
         close:              '✕',
         loading:            'Chargement...',
@@ -554,7 +554,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         'Ninguno',
         result_title:       'Foto tomada',
-        save_hint:          'Mantén pulsada la foto para guardar / Botón "Guardar" → "Guardar imagen"',
+        save_hint:          'Mantén pulsada la imagen para guardar en Fotos',
 
         close:              '✕',
         loading:            'Cargando...',
@@ -633,7 +633,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         'Keiner',
         result_title:       'Foto aufgenommen',
-        save_hint:          'Lang drücken zum Speichern / Taste "Foto speichern" → "Bild speichern"',
+        save_hint:          'Bild gedrückt halten, um in Fotos zu speichern',
 
         close:              '✕',
         loading:            'Laden...',
@@ -712,7 +712,7 @@ const I18N_TRANSLATIONS = {
 
         frame_none:         'Nenhum',
         result_title:       'Foto tirada',
-        save_hint:          'Pressione e segure a foto para guardar / Botão "Guardar foto" → "Guardar imagem"',
+        save_hint:          'Pressione e segure a imagem para guardar em Fotos',
 
         close:              '✕',
         loading:            'A carregar...',
@@ -802,6 +802,7 @@ const I18N_DOM_MAP = [
     // ── 撮影・結果ボタン・ラベル ───────────────────────────────
     ['#retake-btn',              'retake_btn',   'text'],
     ['#download-btn',            'save_btn',     'text'],
+    ['#result-hint',             'save_hint',    'text'],
     ['#retry-btn',               'retry_btn',    'text'],
     ['.result-header-title',     'result_title', 'text'],
     ['#loading-overlay .loading-text', 'camera_loading', 'text'],

@@ -119,6 +119,7 @@ function captureImage() {
         }
 
         showScreen('result');
+        prepareResultImage();
         if (typeof trackPhotoCapture === 'function') {
             var _fn = (typeof currentFrameName !== 'undefined') ? currentFrameName : '';
             var _fl = (typeof getCurrentFilter === 'function' && getCurrentFilter()) ? getCurrentFilter().name : '';
@@ -237,74 +238,115 @@ function drawMessageOnCanvas(ctx, width, height) {
 }
 
 // ======================================================================
-// 保存（フォトライブラリ優先 / ダウンロードフォールバック）
+// 保存 — 3段構え: ①ダウンロード  ②Web Share  ③長押し保存
 // ======================================================================
 
+var _lastResultBlobUrl = null;
+
+/**
+ * 撮影後に result-canvas → img 変換（長押し保存用）
+ * showScreen('result') の直後に呼ばれる
+ */
+function prepareResultImage() {
+    if (_lastResultBlobUrl) { URL.revokeObjectURL(_lastResultBlobUrl); _lastResultBlobUrl = null; }
+    var img = document.getElementById('result-image');
+    if (!img || !resultCanvas || !resultCanvas.width) return;
+    resultCanvas.toBlob(function(blob) {
+        if (!blob) return;
+        _lastResultBlobUrl = URL.createObjectURL(blob);
+        img.src = _lastResultBlobUrl;
+        img.style.display = 'block';
+        resultCanvas.style.display = 'none';
+    }, 'image/jpeg', 0.93);
+
+    var shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+        var hasShare = (typeof navigator.share === 'function');
+        shareBtn.style.display = hasShare ? 'flex' : 'none';
+    }
+}
+
+function _makeFilename() {
+    var now     = new Date();
+    var dateStr = '' + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate());
+    var timeStr = pad2(now.getHours()) + pad2(now.getMinutes()) + pad2(now.getSeconds());
+    var rest    = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('restaurantName')) || 'Photo';
+    return 'ShinagawaPrince_' + rest + '_' + dateStr + '_' + timeStr + '.jpg';
+}
+
+function _makeBlob() {
+    return new Promise(function(resolve, reject) {
+        resultCanvas.toBlob(
+            function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); },
+            'image/jpeg', 0.93
+        );
+    });
+}
+
+/**
+ * 「保存する」ボタン — 端末に直接ダウンロード保存（全端末対応）
+ */
 async function downloadImage() {
     if (!resultCanvas || !resultCanvas.width) {
         alert('画像がありません。もう一度撮影してください。');
         return;
     }
 
-    const btn = document.getElementById('download-btn');
+    var btn = document.getElementById('download-btn');
     if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
 
     try {
-        // ---- ファイル名 ----
-        const now     = new Date();
-        const dateStr = `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}`;
-        const timeStr = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
-        const rest    = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('restaurantName')) || 'Photo';
-        const filename = `ShinagawaPrince_${rest}_${dateStr}_${timeStr}.jpg`;
+        var blob     = await _makeBlob();
+        var filename = _makeFilename();
 
-        // ---- JPEG Blob に変換（品質 0.93） ----
-        const blob = await new Promise((resolve, reject) => {
-            resultCanvas.toBlob(
-                b => b ? resolve(b) : reject(new Error('toBlob failed')),
-                'image/jpeg', 0.93
-            );
-        });
-
-        const file = new File([blob], filename, { type: 'image/jpeg', lastModified: Date.now() });
-
-        // ---- 方法 1: Web Share API（iOS Safari / Android Chrome → フォトライブラリ） ----
-        // canShare が未実装のブラウザも navigator.share のみで試みる
-        const canShare = navigator.canShare
-            ? navigator.canShare({ files: [file] })
-            : (typeof navigator.share === 'function');
-
-        if (canShare && typeof navigator.share === 'function') {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: '品川プリンスホテル フォト'
-                });
-                if (typeof trackPhotoSave === 'function') trackPhotoSave('share_api');
-                return;
-            } catch (err) {
-                if (err.name === 'AbortError') return; // ユーザーがキャンセル
-                // SecurityError: ユーザージェスチャーなしで呼ばれた場合など
-                console.warn('Web Share API failed, using download fallback:', err);
-            }
-        }
-
-        // ---- 方法 2: <a download> フォールバック ----
-        // （デスクトップブラウザ・Web Share 非対応環境）
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        var url  = URL.createObjectURL(blob);
+        var link = document.createElement('a');
         link.href     = url;
         link.download = filename;
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         if (typeof trackPhotoSave === 'function') trackPhotoSave('download');
-        setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 300);
-
+        setTimeout(function() { document.body.removeChild(link); URL.revokeObjectURL(url); }, 500);
     } catch (err) {
-        console.error('Save error:', err);
+        console.error('Download error:', err);
         alert('保存に失敗しました。もう一度お試しください。');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = '保存する'; }
+    }
+}
+
+/**
+ * 「共有」ボタン — Web Share API（iOS: 写真に保存 / Android: Google Photos 等）
+ */
+async function shareImage() {
+    if (!resultCanvas || !resultCanvas.width) return;
+
+    var shareBtn = document.getElementById('share-btn');
+    if (shareBtn) shareBtn.disabled = true;
+
+    try {
+        var blob     = await _makeBlob();
+        var filename = _makeFilename();
+        var file     = new File([blob], filename, { type: 'image/jpeg', lastModified: Date.now() });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: '品川プリンスホテル フォト' });
+            if (typeof trackPhotoSave === 'function') trackPhotoSave('share_api');
+        } else if (typeof navigator.share === 'function') {
+            var tempUrl = URL.createObjectURL(blob);
+            await navigator.share({ title: '品川プリンスホテル フォト', url: tempUrl });
+            setTimeout(function() { URL.revokeObjectURL(tempUrl); }, 1000);
+            if (typeof trackPhotoSave === 'function') trackPhotoSave('share_url');
+        } else {
+            alert('この端末では共有機能を利用できません。「保存する」ボタンをお使いください。');
+        }
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.warn('Share failed:', err);
+        alert('共有に失敗しました。「保存する」ボタンをお使いください。');
+    } finally {
+        if (shareBtn) shareBtn.disabled = false;
     }
 }
 

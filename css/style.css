@@ -512,18 +512,48 @@ body {
         0 15px 50px rgba(0,0,0,0.5),
         0 0 0 1px rgba(212, 175, 55, 0.3);
     display: block;
-    /* iOS: 長押しで「写真を保存」が表示されるよう touch-callout を許可 */
+}
+
+/* 結果画像（長押し保存用 img 要素） */
+#result-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    box-shadow:
+        0 15px 50px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(212, 175, 55, 0.3);
+    display: block;
     -webkit-touch-callout: default;
     -webkit-user-select: auto;
     user-select: auto;
     touch-action: auto;
 }
 
-/* 結果コンテナも長押し許可（子Canvasを含む領域全体） */
+/* 結果コンテナも長押し許可 */
 #result-container {
     -webkit-touch-callout: default;
     -webkit-user-select: auto;
 }
+
+/* 共有ボタン（丸型アイコン） */
+.btn-share-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.12);
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    color: var(--color-gold-primary);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.btn-share-icon:active { transform: scale(0.9); background: rgba(212, 175, 55, 0.25); }
 
 /* 結果画面ボタンエリア - 固定高さで必ず表示 */
 #result-controls {

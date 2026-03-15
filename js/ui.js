@@ -480,6 +480,9 @@ switchCameraBtn?.addEventListener('click', switchCamera);
 
 // --- 再撮影 ---
 document.getElementById('retake-btn')?.addEventListener('click', () => {
+    var rImg = document.getElementById('result-image');
+    if (rImg) { rImg.style.display = 'none'; rImg.src = ''; }
+    if (resultCanvas) resultCanvas.style.display = 'block';
     showScreen('camera');
     // selectFaceDecoration 経由で再起動（gen 管理を一元化）
     if (typeof selectFaceDecoration === 'function' &&
@@ -492,30 +495,8 @@ document.getElementById('retake-btn')?.addEventListener('click', () => {
 // --- 保存 ---
 document.getElementById('download-btn')?.addEventListener('click', downloadImage);
 
-// --- 長押し保存（result-canvas を長押しで写真を保存） ---
-(function setupLongPress() {
-    const resultCanvas = document.getElementById('result-canvas');
-    if (!resultCanvas) return;
-    let pressTimer = null;
-    const LONG_PRESS_MS = 600;
-
-    const startPress = () => {
-        pressTimer = setTimeout(() => {
-            pressTimer = null;
-            downloadImage();
-        }, LONG_PRESS_MS);
-    };
-    const cancelPress = () => {
-        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-    };
-
-    resultCanvas.addEventListener('touchstart', startPress, { passive: true });
-    resultCanvas.addEventListener('touchend',   cancelPress);
-    resultCanvas.addEventListener('touchmove',  cancelPress, { passive: true });
-    resultCanvas.addEventListener('mousedown',  startPress);
-    resultCanvas.addEventListener('mouseup',    cancelPress);
-    resultCanvas.addEventListener('mouseleave', cancelPress);
-})();
+// --- 共有 ---
+document.getElementById('share-btn')?.addEventListener('click', shareImage);
 
 // --- 言語セレクター初期化 ---
 if (typeof buildLanguageSelector === 'function') {

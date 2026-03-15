@@ -61,6 +61,7 @@ const faceFilterSelector = document.getElementById('face-filter-selector'); // �
 const resultCanvas = document.getElementById('result-canvas');      // 撮影画像表示用Canvas
 const retakeBtn = document.getElementById('retake-btn');            // 再撮影ボタン
 const downloadBtn = document.getElementById('download-btn');        // 保存ボタン
+const shareBtn = document.getElementById('share-btn');              // 共有ボタン
 
 // --- エラー画面要素 ---
 const errorText = document.getElementById('error-text');            // エラーメッセージテキスト

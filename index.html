@@ -226,14 +226,15 @@
             <span class="result-header-title" data-i18n="result_title">— 撮影完了 —</span>
         </div>
         <div id="result-container">
-            <canvas id="result-canvas"></canvas>
+            <canvas id="result-canvas" style="display:none;"></canvas>
+            <img id="result-image" alt="撮影写真" style="display:none;">
         </div>
+        <p id="result-hint" style="text-align:center;color:rgba(250,249,246,0.55);font-size:11px;padding:0 16px;margin-top:-8px;" data-i18n="save_hint">画像を長押しして「写真に保存」もできます</p>
         <div id="result-controls">
             <button id="retake-btn"   class="btn btn-secondary" data-i18n="retake_btn">再撮影</button>
             <button id="download-btn" class="btn btn-primary"   data-i18n="save_btn">保存する</button>
+            <button id="share-btn"    class="btn-share-icon" title="共有" aria-label="共有">📤</button>
         </div>
-        <!-- iOS 長押し・Web Share 保存ガイド -->
-        <p class="save-hint" data-i18n="save_hint">写真を長押し、または「保存する」→「写真に保存」を選択</p>
     </div>
 
     <!-- ================================================================
