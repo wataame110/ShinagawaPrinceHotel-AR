@@ -184,6 +184,7 @@ function selectFrame(frameId) {
     currentFrameId = frameId;
     const frame = framesConfig.frames.find(f => f.id === frameId);
     if (!frame) return;
+    currentFrameName = frame.name || frameId;
 
     if (frame.isNone) {
         // 「なし」: フレームオーバーレイを非表示にして frameImage を null に

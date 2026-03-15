@@ -61,7 +61,7 @@ const I18N_TRANSLATIONS = {
         msg_pos_bl:         '下・左',
         msg_pos_bc:         '下・中央',
         msg_pos_br:         '下・右',
-        msg_default_text:   'お誕生日おめでとうございます',
+        msg_default_text:   'Happy Anniversary',
         msg_edit_location:  '編集',
 
         // フィルター / デコレーション
@@ -754,6 +754,14 @@ function t(key) {
     return dict[key] || I18N_TRANSLATIONS['ja'][key] || key;
 }
 
+/** 全言語のデフォルトメッセージと一致するか判定 */
+function _isKnownDefault(val) {
+    for (var k in I18N_TRANSLATIONS) {
+        if (I18N_TRANSLATIONS[k].msg_default_text === val) return true;
+    }
+    return false;
+}
+
 /**
  * 言語を切り替えて全 UI に再適用する
  * @param {string} lang - 言語コード（'ja','en','zh','zh-TW','ko','fr','es','de','pt'）
@@ -764,12 +772,16 @@ function setLanguage(lang) {
     localStorage.setItem('sph_lang', lang);
     if (typeof trackLangChange === 'function') trackLangChange(lang);
     applyTranslations();
-    // デフォルトメッセージ文字列を言語に合わせて更新
+    // デフォルトメッセージ文字列を言語に合わせて更新（ユーザーが編集済みの場合はスキップ）
     const msgInput = document.getElementById('message-text');
     if (msgInput && typeof messageConfig !== 'undefined') {
         const newDefault = t('msg_default_text');
-        msgInput.value = newDefault;
-        messageConfig.text.value = newDefault;
+        const currentVal = (messageConfig.text.value || '').trim();
+        const isCustom = currentVal !== '' && !_isKnownDefault(currentVal);
+        if (!isCustom) {
+            msgInput.value = newDefault;
+            messageConfig.text.value = newDefault;
+        }
     }
     if (typeof updatePreviewGuide  === 'function') updatePreviewGuide();
     // Face AR UI / Filter UI を再構築して翻訳を反映

@@ -93,7 +93,7 @@ const FILTERS = [
 ];
 
 let currentFilterId = 'none';
-let currentFilterIntensity = 1.0; // 0.0〜1.0（デフォルト100%）
+let currentFilterIntensity = 0.5; // 0.0〜1.0（デフォルト50%）
 
 // ======================================================================
 // フィルター取得・設定

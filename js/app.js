@@ -83,7 +83,7 @@ let stream = null;
  * 'user' = インカメラ（前面）, 'environment' = アウトカメラ（背面）
  * @type {string}
  */
-let currentFacingMode = 'user';
+let currentFacingMode = 'environment';
 
 /**
  * 現在読み込まれているフレーム画像オブジェクト
@@ -102,6 +102,7 @@ let framesConfig = null;
  * @type {string}
  */
 let currentFrameId = 'hapuna';
+let currentFrameName = '';
 
 /**
  * 記念日メッセージの設定
@@ -114,7 +115,7 @@ let messageConfig = {
     },
     text: {
         enabled: true,
-        value: 'お誕生日おめでとうございます'
+        value: 'Happy Anniversary'
     },
     location: {
         enabled: true,

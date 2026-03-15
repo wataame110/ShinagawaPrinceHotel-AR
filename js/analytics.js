@@ -1,7 +1,7 @@
 /**
  * ======================================================================
  * Google Analytics 4 イベントトラッキング (analytics.js)
- * 
+ *
  * 各モジュールから呼び出す共通イベント送信ヘルパー。
  * gtag が未ロードの場合は何もしない（オフライン時の安全弁）。
  * ======================================================================
@@ -13,12 +13,19 @@
  * @param {Object} [params]  - イベントパラメータ
  */
 function trackEvent(eventName, params) {
-    if (typeof gtag !== 'function') return;
+    if (typeof gtag !== 'function') {
+        console.warn('[GA] gtag not loaded — event dropped:', eventName);
+        return;
+    }
     try {
         var restaurant = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('restaurantName')) || '';
         var base = { restaurant_name: restaurant };
-        gtag('event', eventName, Object.assign(base, params || {}));
-    } catch (_) {}
+        var merged = Object.assign(base, params || {});
+        gtag('event', eventName, merged);
+        console.log('[GA] ✓', eventName, merged);
+    } catch (e) {
+        console.warn('[GA] send error:', eventName, e);
+    }
 }
 
 /* ── 各イベント送信関数 ──────────────────────────────────── */

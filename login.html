@@ -24,7 +24,7 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-FN6X4ZH0QT');
+    gtag('config', 'G-FN6X4ZH0QT', { transport_type: 'beacon' });
     </script>
 
     <!-- i18n を最初に読み込む（スクリプト内で t() を使用するため） -->
@@ -197,14 +197,20 @@
                 sessionStorage.setItem('authenticated',   'true');
                 sessionStorage.setItem('restaurantId',    authenticatedRestaurant.id);
                 sessionStorage.setItem('restaurantName',  authenticatedRestaurant.name);
+
+                const dest = `index.html?restaurant=${authenticatedRestaurant.id}`;
                 if (typeof gtag === 'function') {
                     gtag('event', 'login', {
                         method: 'password',
                         restaurant_id: authenticatedRestaurant.id,
-                        restaurant_name: authenticatedRestaurant.name
+                        restaurant_name: authenticatedRestaurant.name,
+                        event_callback: function() { window.location.href = dest; },
+                        event_timeout: 1500
                     });
+                    setTimeout(function() { window.location.href = dest; }, 1500);
+                } else {
+                    window.location.href = dest;
                 }
-                window.location.href = `index.html?restaurant=${authenticatedRestaurant.id}`;
             } else {
                 showError(typeof t === 'function'
                     ? t('login_error')
