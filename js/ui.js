@@ -200,14 +200,17 @@ function selectFrame(frameId) {
         el.classList.toggle('selected', el.dataset.frameId === frameId);
     });
     if (typeof trackFrameSelect === 'function') trackFrameSelect(frame ? frame.name : 'none');
-    closeFrameSelector();
-    hidePanelOverlay();
+    closeAllPanels();
 }
 
-function openFrameSelector()  { frameSelector.classList.add('active'); frameSelector.classList.remove('hidden'); }
+function openFrameSelector()  {
+    closeAllPanels();
+    frameSelector.classList.add('active');
+    frameSelector.classList.remove('hidden');
+    showPanelOverlay();
+}
 function closeFrameSelector() {
     frameSelector.classList.remove('active');
-    setTimeout(() => frameSelector.classList.add('hidden'), 350);
 }
 
 // ======================================================================
@@ -315,11 +318,11 @@ function applyMessageSettings() {
 
     updatePreviewGuide();
     if (typeof trackMessageEdit === 'function') trackMessageEdit();
-    closeMessageEditor();
-    hidePanelOverlay();
+    closeAllPanels();
 }
 
 function openMessageEditor() {
+    closeAllPanels();
     // messageConfig → DOM 同期（パネルを開く前に現在の設定値を入力欄へ反映）
     if (typeof messageConfig !== 'undefined') {
         if (messageDateInput)              messageDateInput.value              = messageConfig.date.value     || '';
@@ -337,30 +340,52 @@ function openMessageEditor() {
     }
     messageEditor.classList.add('active');
     messageEditor.classList.remove('hidden');
+    showPanelOverlay();
 }
 function closeMessageEditor() {
     messageEditor.classList.remove('active');
-    setTimeout(() => messageEditor.classList.add('hidden'), 350);
 }
 
 // ======================================================================
 // フィルターパネル
 // ======================================================================
 
-function openFilterSelector()  { filterSelector.classList.add('active'); filterSelector.classList.remove('hidden'); }
+function openFilterSelector() {
+    closeAllPanels();
+    filterSelector.classList.add('active');
+    filterSelector.classList.remove('hidden');
+    showPanelOverlay();
+    if (typeof buildFilterUI === 'function') buildFilterUI();
+}
 function closeFilterSelector() {
     filterSelector.classList.remove('active');
-    setTimeout(() => filterSelector.classList.add('hidden'), 350);
 }
 
 // ======================================================================
 // 顔 AR フィルターパネル
 // ======================================================================
 
-function openFaceFilterSelector()  { faceFilterSelector.classList.add('active'); faceFilterSelector.classList.remove('hidden'); }
+function openFaceFilterSelector() {
+    closeAllPanels();
+    faceFilterSelector.classList.add('active');
+    faceFilterSelector.classList.remove('hidden');
+    showPanelOverlay();
+    if (typeof buildFaceFilterUI === 'function') buildFaceFilterUI();
+}
 function closeFaceFilterSelector() {
     faceFilterSelector.classList.remove('active');
-    setTimeout(() => faceFilterSelector.classList.add('hidden'), 350);
+}
+
+// ======================================================================
+// 全パネル一括クローズ（排他制御 + オーバーレイ除去）
+// ======================================================================
+
+function closeAllPanels() {
+    if (frameSelector)      frameSelector.classList.remove('active');
+    if (messageEditor)      messageEditor.classList.remove('active');
+    if (filterSelector)     filterSelector.classList.remove('active');
+    if (faceFilterSelector) faceFilterSelector.classList.remove('active');
+    hidePanelOverlay();
 }
 
 // ======================================================================
@@ -370,11 +395,7 @@ function closeFaceFilterSelector() {
 // --- パネル外タップで閉じる（オーバーレイ） ---
 document.addEventListener('click', (e) => {
     if (e.target.id === 'panel-overlay') {
-        closeFrameSelector();
-        closeMessageEditor();
-        closeFilterSelector();
-        closeFaceFilterSelector();
-        hidePanelOverlay();
+        closeAllPanels();
     }
 });
 
@@ -390,21 +411,19 @@ function hidePanelOverlay() {
 // --- フレーム選択 ---
 frameSelectToggle.addEventListener('click', () => {
     openFrameSelector();
-    showPanelOverlay();
 });
 
 document.getElementById('frame-selector-close')?.addEventListener('click', () => {
-    closeFrameSelector(); hidePanelOverlay();
+    closeAllPanels();
 });
 
 // --- メッセージ編集 ---
 messageToggle.addEventListener('click', () => {
     openMessageEditor();
-    showPanelOverlay();
 });
 
 document.getElementById('message-editor-close')?.addEventListener('click', () => {
-    closeMessageEditor(); hidePanelOverlay();
+    closeAllPanels();
 });
 
 document.getElementById('message-apply')?.addEventListener('click', applyMessageSettings);
@@ -451,23 +470,19 @@ if (_msgPosSel) _msgPosSel.addEventListener('change', () => {
 // --- 写真フィルター ---
 document.getElementById('filter-toggle')?.addEventListener('click', () => {
     openFilterSelector();
-    showPanelOverlay();
-    if (typeof buildFilterUI === 'function') buildFilterUI();
 });
 
 document.getElementById('filter-selector-close')?.addEventListener('click', () => {
-    closeFilterSelector(); hidePanelOverlay();
+    closeAllPanels();
 });
 
 // --- 顔 AR フィルター ---
 document.getElementById('face-filter-toggle')?.addEventListener('click', () => {
     openFaceFilterSelector();
-    showPanelOverlay();
-    if (typeof buildFaceFilterUI === 'function') buildFaceFilterUI();
 });
 
 document.getElementById('face-filter-selector-close')?.addEventListener('click', () => {
-    closeFaceFilterSelector(); hidePanelOverlay();
+    closeAllPanels();
 });
 
 // --- 撮影ボタン ---
