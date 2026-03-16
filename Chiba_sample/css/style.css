@@ -1,0 +1,1761 @@
+/*
+ * ======================================================================
+ * フォトフレーム撮影サイト - スタイルシート
+ * 高級ホテルレストラン向けデザイン
+ * ======================================================================
+ */
+
+/* ======================================================================
+ * カラーパレット定義
+ * ====================================================================== */
+:root {
+    --color-gold-primary: #D4AF37;
+    --color-gold-light: #F4D03F;
+    --color-gold-dark: #B8941E;
+    --color-navy-dark: #1a2332;
+    --color-navy: #2c3e50;
+    --color-navy-light: #34495e;
+    --color-cream: #FAF9F6;
+    --color-white: #FFFFFF;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --font-luxury: 'Times New Roman', 'Noto Serif JP', serif;
+    --font-modern: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
+    --header-height: 54px;
+    --controls-height: 80px;
+}
+
+/* ======================================================================
+ * ベーススタイル
+ * ====================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    /* dvh: iOS Safariのアドレスバーを除いた動的ビューポート高さ（Safari 15.4+対応）
+     * フォールバック: JavaScriptで設定される --vh 変数を使用 */
+    height: -webkit-fill-available;
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-modern);
+    background: var(--color-navy-dark);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* --vh はJSで window.innerHeight に基づいて設定される */
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    /* dvh 対応ブラウザではこちらを使用 */
+    height: 100dvh;
+}
+
+/* ======================================================================
+ * アプリケーションコンテナ
+ * ====================================================================== */
+#app {
+    width: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ======================================================================
+ * スクリーン共通スタイル
+ * ====================================================================== */
+.screen {
+    display: none;
+    width: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    flex-direction: column;
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    overflow: hidden;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ======================================================================
+ * カメラ画面ヘッダー
+ * レストラン名とツールボタンを表示
+ * ====================================================================== */
+.camera-header {
+    flex-shrink: 0;
+    height: var(--header-height);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    background: rgba(26, 35, 50, 0.95);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+    z-index: 20;  /* video-container(z-index:0)より確実に上に表示 */
+    position: relative;
+}
+
+.camera-header-title {
+    color: var(--color-gold-primary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 0;
+    text-align: center;
+    flex: 1;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ロゴ＋レストラン名のブランドエリア */
+.camera-header-brand {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ヘッダー内ロゴ画像 */
+.camera-header-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+/* ヘッダー内レストラン名（ロゴ下のサブテキスト） */
+.camera-header-restaurant {
+    color: rgba(250, 249, 246, 0.75);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 1px;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ======================================================================
+ * ヘッダーボタン（hdr-btn）— 小型統一ボタン
+ * ====================================================================== */
+.hdr-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1.5px solid rgba(212, 175, 55, 0.6);
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.hdr-btn:active { transform: scale(0.88); background: rgba(212, 175, 55, 0.25); }
+
+/* ======================================================================
+ * トグルボタン（フレーム選択・メッセージ編集・ログアウト）
+ * ====================================================================== */
+.frame-toggle-btn,
+.message-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1.5px solid var(--color-gold-primary);
+    color: var(--color-gold-primary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.frame-toggle-btn:active,
+.message-toggle-btn:active {
+    transform: scale(0.9);
+}
+
+/* ======================================================================
+ * ビデオコンテナ — 9:16 固定アスペクト比（縦長スマートフォン標準）
+ * ====================================================================== */
+#video-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 9 / 16;
+    max-height: calc(var(--vh, 1vh) * 100 - var(--header-height) - var(--controls-height));
+    max-height: calc(100dvh - var(--header-height) - var(--controls-height));
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* カメラライブプレビュー
+ * transform（反転）はJS側で currentFacingMode に応じて動的に設定 */
+#camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 顔ARフィルター描画用 Canvas（video の上・frame の下） */
+#face-filter-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* 装飾フレームオーバーレイ */
+#frame-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 10;
+    transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+/* クロップガイド（印刷比率プレビュー枠） */
+.crop-guide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9;
+    box-sizing: border-box;
+    transition: border 0.3s ease;
+}
+
+/* プレビューガイド - メッセージ内容を表示 */
+.preview-guide {
+    position: absolute;
+    bottom: 10px;
+    left: 5%;
+    right: 5%;
+    background: rgba(26, 35, 50, 0.80);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    z-index: 15;
+    pointer-events: none;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.preview-guide-text {
+    color: var(--color-cream);
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.preview-guide-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* ======================================================================
+ * 撮影ボタンエリア
+ * ====================================================================== */
+#controls {
+    flex-shrink: 0;
+    height: var(--controls-height);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background: rgba(26, 35, 50, 0.95);
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 0 20px;
+}
+
+/* カメラ切り替えボタン */
+.btn-switch-camera {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.12);
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    color: var(--color-gold-primary);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-switch-camera:active {
+    transform: scale(0.9) rotate(180deg);
+    background: rgba(212, 175, 55, 0.25);
+}
+
+.btn-switch-camera:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ======================================================================
+ * ローディングオーバーレイ
+ * カメラ起動中の表示
+ * ====================================================================== */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(212, 175, 55, 0.2);
+    border-top: 3px solid var(--color-gold-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    color: var(--color-cream);
+    font-size: 16px;
+    letter-spacing: 2px;
+}
+
+/* ======================================================================
+ * カウントダウン表示
+ * position: fixed でどこからでも画面中央に表示
+ * ====================================================================== */
+#countdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 130px;
+    font-weight: bold;
+    font-family: var(--font-luxury);
+    color: var(--color-gold-primary);
+    text-shadow:
+        0 0 40px rgba(212, 175, 55, 0.8),
+        0 0 80px rgba(212, 175, 55, 0.5),
+        0 6px 20px rgba(0,0,0,0.9);
+    z-index: 500;
+    animation: countdownPulse 1s ease-in-out;
+}
+
+#countdown.hidden {
+    display: none;
+}
+
+@keyframes countdownPulse {
+    0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+    50%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.95; }
+}
+
+/* ======================================================================
+ * ボタン共通スタイル
+ * ====================================================================== */
+.btn {
+    padding: 18px 50px;
+    font-size: 17px;
+    font-weight: 600;
+    font-family: var(--font-modern);
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 160px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* プライマリボタン - ゴールドグラデーション */
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-gold-primary) 0%, var(--color-gold-dark) 100%);
+    color: var(--color-navy-dark);
+    font-weight: 700;
+}
+
+/* セカンダリボタン */
+.btn-secondary {
+    background: transparent;
+    color: var(--color-gold-primary);
+    border: 2px solid var(--color-gold-primary);
+}
+
+/* 全幅ボタン */
+.btn-full {
+    width: 100%;
+}
+
+/* ======================================================================
+ * 結果画面
+ * 撮影後の画像表示 - 必ずボタンが見えるレイアウト
+ * ====================================================================== */
+#result-screen {
+    display: none;
+    flex-direction: column;
+}
+
+#result-screen.active {
+    display: flex;
+}
+
+/* 結果画面ヘッダー */
+.result-header {
+    flex-shrink: 0;
+    height: var(--header-height);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(26, 35, 50, 0.95);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.result-header-title {
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+/* 結果画像エリア - flex: 1 で残り高さを使う */
+#result-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    overflow: hidden;
+}
+
+/* 撮影画像Canvas - 必ず収まるようにmax設定 */
+#result-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    box-shadow:
+        0 15px 50px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(212, 175, 55, 0.3);
+    display: block;
+}
+
+/* 結果画像（長押し保存用 img 要素） */
+#result-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    box-shadow:
+        0 15px 50px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(212, 175, 55, 0.3);
+    display: block;
+    -webkit-touch-callout: default;
+    -webkit-user-select: auto;
+    user-select: auto;
+    touch-action: auto;
+}
+
+/* 結果コンテナも長押し許可 */
+#result-container {
+    -webkit-touch-callout: default;
+    -webkit-user-select: auto;
+}
+
+/* ======================================================================
+ * レシート印刷プレビュー
+ * ====================================================================== */
+.receipt-preview {
+    width: 100%;
+    max-width: 320px;
+    max-height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 auto;
+}
+
+.receipt-paper {
+    background: #fff;
+    color: #000;
+    font-family: "Courier New", "MS Gothic", monospace;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 4px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+.rp-title {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 4px 0 6px;
+}
+
+.rp-divider {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 6px 0;
+}
+
+.rp-margin {
+    width: 100%;
+}
+
+.rp-photo-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.rp-photo-wrap img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.rp-info {
+    text-align: center;
+    line-height: 1.8;
+    font-size: 10px;
+    padding: 2px 0;
+    min-height: 12px;
+}
+
+.rp-info .rp-msg {
+    font-size: 12px;
+    font-weight: bold;
+    margin: 2px 0;
+}
+
+.rp-footer {
+    font-size: 9px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.rp-cut {
+    font-size: 8px;
+    color: #999;
+    letter-spacing: 2px;
+    margin-top: 4px;
+    padding-bottom: 2px;
+}
+
+/* 共有ボタン（丸型アイコン） */
+.btn-share-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.12);
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    color: var(--color-gold-primary);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.btn-share-icon:active { transform: scale(0.9); background: rgba(212, 175, 55, 0.25); }
+
+/* 結果画面ボタンエリア - 固定高さで必ず表示 */
+#result-controls {
+    flex-shrink: 0;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background: rgba(26, 35, 50, 0.95);
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 0 12px;
+}
+
+#result-controls .btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 0;
+    white-space: nowrap;
+    flex: 1;
+    max-width: 160px;
+    letter-spacing: 0.8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+
+#result-controls .btn-share-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    flex: 0 0 46px;
+}
+
+.btn-print {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-print:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}
+
+/* ======================================================================
+   印刷設定パネル
+   ====================================================================== */
+.print-settings-body {
+    padding: 12px 16px 20px;
+}
+
+.print-setting-group {
+    margin-bottom: 16px;
+}
+
+.print-setting-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-gold-primary);
+    margin-bottom: 8px;
+}
+
+.print-ratio-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.ratio-btn {
+    flex: 1;
+    padding: 10px 0;
+    border: 1.5px solid rgba(212, 175, 55, 0.4);
+    border-radius: 8px;
+    background: rgba(26, 35, 50, 0.6);
+    color: var(--color-white);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.ratio-btn.active {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-primary);
+}
+
+.ratio-btn:active {
+    transform: scale(0.95);
+}
+
+.print-margin-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.print-margin-row select {
+    width: 100%;
+}
+
+.print-margin-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.print-margin-slider-wrap input[type="range"] {
+    flex: 1;
+    accent-color: var(--color-gold-primary);
+    height: 6px;
+}
+
+.print-margin-slider-wrap span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-gold-primary);
+    min-width: 48px;
+    text-align: right;
+}
+
+/* 印刷ステータス表示 */
+.print-status-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: #fff;
+    font-size: 16px;
+    gap: 16px;
+}
+.print-status-overlay .print-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--color-gold-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.print-status-overlay .print-status-text {
+    text-align: center;
+    line-height: 1.6;
+}
+.print-status-overlay .print-status-ok {
+    color: #4caf50;
+    font-size: 48px;
+}
+.print-status-overlay .print-status-err {
+    color: #f44336;
+    font-size: 48px;
+}
+
+/* 保存ガイドヒント（長押し・写真に保存） */
+.save-hint {
+    flex-shrink: 0;
+    text-align: center;
+    color: rgba(212, 175, 55, 0.75);
+    font-size: 13px;
+    padding: 10px 16px 12px;
+    background: rgba(26, 35, 50, 0.95);
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: keep-all;
+}
+
+/* ======================================================================
+ * エラー画面
+ * ====================================================================== */
+#error-screen {
+    justify-content: center;
+    align-items: center;
+}
+
+.error-message {
+    text-align: center;
+    padding: 40px 30px;
+    color: var(--color-cream);
+}
+
+.error-message p {
+    font-size: 17px;
+    margin-bottom: 30px;
+    line-height: 1.8;
+    font-weight: 300;
+}
+
+/* ======================================================================
+ * フレーム選択パネル
+ * position: fixed で #camera-screen の overflow に影響されない
+ * 構造: .frame-selector > .frame-selector-header + .frame-list
+ *        .frame-list > (.frame-list-sep + .frame-section-grid)*
+ *        .frame-section-grid > .frame-item*
+ * ====================================================================== */
+.frame-selector {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(22, 32, 48, 0.98);
+    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
+    border-radius: 20px 20px 0 0;
+    padding: 14px;
+    z-index: 200;
+    max-height: 55vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-top: 2px solid var(--color-gold-primary);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+}
+
+.frame-selector.active {
+    transform: translateY(0);
+}
+
+.frame-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    flex-shrink: 0;
+}
+
+.frame-selector-header h3 {
+    color: var(--color-gold-primary);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* 閉じるボタン */
+.close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid var(--color-gold-primary);
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.close-btn:active {
+    transform: scale(0.9);
+}
+
+/* ---- フレームリスト（スクロールコンテナ） ---- */
+.frame-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.frame-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.frame-list::-webkit-scrollbar-thumb {
+    background: var(--color-gold-primary);
+    border-radius: 4px;
+}
+
+/* ---- セクション区切りラベル ---- */
+.frame-list-sep {
+    text-align: center;
+    color: rgba(212, 175, 55, 0.6);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 8px 0 6px;
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+    margin-top: 4px;
+}
+
+.frame-list-sep:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* ---- セクション内グリッド（3列固定） ---- */
+.frame-section-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 4px 0 8px;
+}
+
+/* ---- フレームアイテム ---- */
+.frame-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* アスペクト比を ::before 疑似要素で確保（全ブラウザ互換） */
+.frame-item::before {
+    content: '';
+    display: block;
+    padding-top: 177.78%;  /* 9:16 = 高さ/幅 = 16/9 = 177.78% */
+}
+
+.frame-item:active {
+    transform: scale(0.96);
+}
+
+.frame-item.selected {
+    border-color: var(--color-gold-primary);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+}
+
+/* サムネイル画像ラッパー */
+.frame-thumb-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.frame-thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.frame-badge-soon {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(220, 80, 80, 0.88);
+    color: #fff;
+    font-size: 7px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.frame-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.frame-item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(26, 35, 50, 0.9), transparent);
+    color: var(--color-cream);
+    padding: 16px 4px 4px;
+    font-size: 9px;
+    text-align: center;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ======================================================================
+ * メッセージ編集パネル
+ * position: fixed で確実に最前面表示
+ * ====================================================================== */
+.message-editor {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(22, 32, 48, 0.98);
+    backdrop-filter: blur(30px);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index: 200;
+    max-height: 80vh;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-top: 2px solid var(--color-gold-primary);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+}
+
+.message-editor.active {
+    transform: translateY(0);
+}
+
+.message-editor.hidden {
+    display: block;
+}
+
+.message-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.message-editor-header h3 {
+    color: var(--color-gold-primary);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.message-editor-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-right: 2px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: var(--color-cream);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.form-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-group-header label {
+    margin: 0;
+}
+
+.toggle-label-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-gold-primary);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.toggle-label-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-gold-primary);
+}
+
+.toggle-label-inline span {
+    color: var(--color-cream);
+    font-size: 13px;
+}
+
+.form-input {
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 1.5px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    background: rgba(250, 249, 246, 0.08);
+    color: var(--color-cream);
+    transition: all 0.2s ease;
+    font-family: var(--font-modern);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-gold-primary);
+    background: rgba(250, 249, 246, 0.12);
+}
+
+.form-input::placeholder {
+    color: rgba(250, 249, 246, 0.4);
+}
+
+.location-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.location-input-group .form-input {
+    flex: 1;
+}
+
+.location-readonly {
+    background: rgba(250, 249, 246, 0.04);
+    color: rgba(250, 249, 246, 0.6);
+}
+
+.btn-edit-location {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1.5px solid var(--color-gold-primary);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--color-gold-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-edit-location:active {
+    transform: scale(0.95);
+}
+
+/* メッセージ位置グリッド */
+.msg-position-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.pos-btn {
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(250, 249, 246, 0.06);
+    color: rgba(250, 249, 246, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pos-btn.active {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-primary);
+}
+
+/* メッセージ文字サイズボタン */
+.msg-size-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.size-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1.5px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(250, 249, 246, 0.06);
+    color: rgba(250, 249, 246, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.size-btn.active {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-primary);
+}
+
+/* ======================================================================
+ * レスポンシブ - 小画面対応
+ * ====================================================================== */
+@media (max-width: 380px) {
+    .camera-header-title {
+        font-size: 11px;
+    }
+
+    .btn {
+        padding: 16px 36px;
+        font-size: 15px;
+        min-width: 130px;
+    }
+
+    .frame-section-grid {
+        gap: 16px;
+    }
+
+    #result-controls {
+        gap: 8px;
+        padding: 0 8px;
+    }
+
+    #result-controls .btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .save-hint {
+        font-size: 12px;
+    }
+
+    #countdown {
+        font-size: 100px;
+    }
+}
+
+/* ======================================================================
+ * レスポンシブ - ランドスケープ（横向き）
+ * ====================================================================== */
+@media (orientation: landscape) {
+    .btn {
+        padding: 14px 36px;
+        font-size: 15px;
+        min-width: 130px;
+    }
+
+    #controls,
+    #result-controls {
+        height: 70px;
+    }
+
+    #countdown {
+        font-size: 90px;
+    }
+
+    .frame-selector,
+    .message-editor {
+        max-height: 80vh;
+    }
+
+    .frame-section-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+}
+
+/* ======================================================================
+ * レスポンシブ - タブレット（iPad等）
+ * ====================================================================== */
+@media (min-width: 600px) {
+    .frame-section-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+
+    .frame-selector {
+        max-height: 50vh;
+        padding: 18px;
+    }
+}
+
+/* ======================================================================
+ * 写真フィルター / 顔ARフィルター — 共通ボトムパネル
+ * ====================================================================== */
+.bottom-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(22, 32, 48, 0.98);
+    backdrop-filter: blur(30px);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 16px 24px;
+    z-index: 200;
+    /* 最大高さ: iPhone8 で 60vh = 400px、iPhone11 で 60vh = 537px */
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-top: 2px solid var(--color-gold-primary);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+    pointer-events: none;
+}
+.bottom-panel.active  { transform: translateY(0); pointer-events: auto; }
+.bottom-panel.hidden  { display: flex; }
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    flex-shrink: 0;
+}
+.panel-header h3 {
+    color: var(--color-gold-primary);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.8px;
+}
+
+/* フィルターグリッド */
+.filter-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 10px;
+    padding: 4px 2px;
+    align-content: start;
+}
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.filter-item.selected {
+    border-color: var(--color-gold-primary);
+    background: rgba(212, 175, 55, 0.15);
+}
+.filter-item:active { transform: scale(0.93); }
+.filter-icon { font-size: 26px; line-height: 1; }
+.filter-name { color: var(--color-cream); font-size: 10px; text-align: center; line-height: 1.3; }
+
+/* (frame-list-sep は L651 で定義済み) */
+
+/* パネル外タップで閉じるオーバーレイ */
+.panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 199;
+    pointer-events: none;
+}
+.panel-overlay.active { display: block; pointer-events: auto; }
+
+/* メッセージエディタはフォーム3つ分の高さが必要 */
+#message-editor { max-height: 85vh; }
+
+#message-apply {
+    margin-top: 12px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+/* (frame-item img は L716 で定義済み) */
+
+/* ======================================================================
+ * プレビューガイド — 「PREVIEW」ラベルで明示
+ * ====================================================================== */
+.preview-guide::before {
+    content: 'PREVIEW';
+    display: block;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgba(212, 175, 55, 0.7);
+    text-align: center;
+    margin-bottom: 3px;
+}
+
+/* ======================================================================
+ * 顔 AR フィルター — カテゴリー別レイアウト
+ * ====================================================================== */
+
+/* パネル内コンテナ（block フロー — 外側をグリッドにしない） */
+.face-filter-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: block;
+    padding: 4px 2px;
+}
+
+/* カテゴリーヘッダー行 */
+.face-filter-cat-header {
+    color: rgba(212, 175, 55, 0.88);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 4px 5px;
+    border-top: 1px solid rgba(212, 175, 55, 0.22);
+    margin-top: 2px;
+}
+
+.face-filter-cat-header:first-of-type {
+    border-top: none;
+    padding-top: 4px;
+}
+
+/* カテゴリー内アイテムのグリッド */
+.face-filter-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
+    padding: 2px 0 6px;
+}
+
+/* Face AR デコレーションボタン */
+.face-filter-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: inherit;
+    width: 100%;
+}
+
+.face-filter-btn.active,
+.face-filter-btn:hover {
+    border-color: var(--color-gold-primary);
+    background: rgba(212, 175, 55, 0.15);
+}
+
+.face-filter-btn:active {
+    transform: scale(0.93);
+}
+
+.face-filter-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.face-filter-label {
+    color: var(--color-cream);
+    font-size: 9px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* ======================================================================
+ * フレームリスト — 「なし」アイテム
+ * ====================================================================== */
+
+.frame-item-none {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 2px dashed rgba(212, 175, 55, 0.35);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.frame-none-icon {
+    font-size: 20px;
+    color: rgba(250, 249, 246, 0.55);
+    line-height: 1;
+}
+
+.frame-none-label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: rgba(250, 249, 246, 0.45);
+}
+
+/* ======================================================================
+ * 言語選択 UI
+ * ====================================================================== */
+
+.lang-selector-wrap {
+    position: relative;
+}
+
+.lang-selector-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.lang-selector-btn:hover,
+.lang-selector-btn:active {
+    background: rgba(255,255,255,0.1);
+}
+
+.lang-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    background: rgba(18, 26, 40, 0.98);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 12px;
+    min-width: 140px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    z-index: 1000;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+}
+
+.lang-dropdown.hidden { display: none; }
+
+.lang-option {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: rgba(250, 249, 246, 0.85);
+    font-size: 13px;
+    padding: 10px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.lang-option:last-child { border-bottom: none; }
+
+.lang-option:hover,
+.lang-option:active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--color-gold-primary);
+}
+
+.lang-option.active {
+    color: var(--color-gold-primary);
+    font-weight: 700;
+}
+
+/* ======================================================================
+ * フィルター強度スライダー（写真フィルター + Face AR デコレーション共通）
+ * ====================================================================== */
+
+.filter-intensity-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px 14px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.22);
+    margin-bottom: 10px;
+}
+
+.filter-intensity-label {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--color-gold-primary);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.filter-intensity-label span {
+    color: #FAF9F6;
+    font-weight: 400;
+    min-width: 38px;
+    text-align: right;
+}
+
+.filter-intensity-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--color-gold-primary) 0%, var(--color-gold-primary) var(--val, 100%), rgba(255,255,255,0.15) var(--val, 100%));
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-intensity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-gold-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    cursor: pointer;
+    border: 2px solid #fff;
+}
+
+.filter-intensity-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-gold-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    cursor: pointer;
+    border: 2px solid #fff;
+}
+
+/* ======================================================================
+ * 横向き（landscape）レイアウト強化
+ * ====================================================================== */
+
+@media (orientation: landscape) and (max-height: 520px) {
+    :root {
+        --header-height: 48px;
+        --controls-height: 60px;
+    }
+
+    /* カメラ画面：左にビデオ、右にコントロール */
+    #camera-screen {
+        flex-direction: row !important;
+    }
+
+    .camera-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--header-height);
+        z-index: 50;
+    }
+
+    #video-container {
+        width: 60% !important;
+        max-width: 60% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        aspect-ratio: auto !important;
+        flex-shrink: 0;
+    }
+
+    #controls {
+        position: relative !important;
+        flex: none !important;
+        width: 40% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    #capture-btn {
+        width: 64px !important;
+        height: 64px !important;
+        font-size: 28px !important;
+    }
+
+    .btn-switch-camera {
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 18px !important;
+    }
+
+    /* ボトムパネルは横向きでも下から出る（高さ制限） */
+    .bottom-panel {
+        max-height: 75vw !important;
+    }
+
+    /* リザルト画面の画像も縮小 */
+    #result-screen {
+        flex-direction: row !important;
+    }
+
+    #result-canvas {
+        max-width: 60% !important;
+        max-height: calc(100dvh - 16px) !important;
+        object-fit: contain !important;
+    }
+
+    #result-controls {
+        position: relative !important;
+        width: 40% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+}

@@ -1,0 +1,32 @@
+{
+  "appName": "AR Photo & Print",
+  "framesBaseDir": "assets/images/frames/",
+
+  "ratioFrames": {
+    "1:1": {
+      "dir": "1x1/",
+      "frames": []
+    },
+    "2:3": {
+      "dir": "2x3/",
+      "frames": []
+    },
+    "9:16": {
+      "dir": "9x16/",
+      "frames": [
+        { "id": "common_iy02",            "name": "Pink Floral"     },
+        { "id": "common_k01",             "name": "Leaf Arch"       },
+        { "id": "common_k03",             "name": "Colorful Flower" },
+        { "id": "common_i1",              "name": "Green Scroll"    },
+        { "id": "common_i3",              "name": "Japanese Red"    },
+        { "id": "common_m01",             "name": "Art Nouveau"     },
+        { "id": "common_pink_floral",     "name": "Pink Balloon"    },
+        { "id": "common_blue_floral",     "name": "Blue Floral"     },
+        { "id": "common_cat",             "name": "Cat"             },
+        { "id": "common_colorful_flower", "name": "Colorful"        },
+        { "id": "common_green_vine",      "name": "Green Vine"      },
+        { "id": "common_leaf_arch",       "name": "Leaf Arch 2"     }
+      ]
+    }
+  }
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#D4AF37">
+    <link rel="manifest" href="config/manifest.json">
+    <title>AR Photo & Print</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon.ico">
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FN6X4ZH0QT"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FN6X4ZH0QT', { transport_type: 'beacon' });
+    </script>
+
+    <!-- MediaPipe FaceMesh（CDN）Face AR デコレーション用 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="app">
+
+    <!-- ================================================================
+         カメラ画面
+         ================================================================ -->
+    <div id="camera-screen" class="screen active">
+
+        <!-- ローディング -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- ヘッダー: ロゴ / ボタン群 -->
+        <div class="camera-header">
+            <div class="camera-header-brand">
+                <span class="camera-header-title" id="camera-header-title">AR Photo & Print</span>
+            </div>
+
+            <div class="header-buttons">
+                <button id="filter-toggle"      class="hdr-btn" title="写真フィルター">🎞</button>
+                <button id="face-filter-toggle" class="hdr-btn" title="Face ARデコレーション">😄</button>
+                <button id="message-toggle"     class="hdr-btn" title="メッセージ編集">💬</button>
+                <button id="frame-select-toggle" class="hdr-btn" title="フレーム選択">🖼️</button>
+                <button id="print-settings-toggle" class="hdr-btn" title="印刷設定">🖨️</button>
+                <div id="lang-selector-anchor"></div>
+            </div>
+        </div>
+
+        <!-- ビデオコンテナ（4:3） -->
+        <div id="video-container">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <div id="crop-guide-overlay" class="crop-guide-overlay" style="display:none;"></div>
+            <img  id="frame-overlay" src="" alt="Frame"
+                  onerror="this.onerror=null;this.style.opacity='0'">
+            <!-- 顔AR描画用 Canvas（video の上・frame の下） -->
+            <canvas id="face-filter-canvas"></canvas>
+            <!-- メッセージプレビューガイド -->
+            <div class="preview-guide">
+                <p class="preview-guide-text" id="preview-guide-text"></p>
+            </div>
+        </div>
+
+        <!-- コントロール -->
+        <div id="controls">
+            <button id="switch-camera-btn" class="btn-switch-camera" title="カメラ切り替え">🔄</button>
+            <button id="capture-btn" class="btn btn-primary">撮 影</button>
+        </div>
+
+        <!-- カウントダウン -->
+        <div id="countdown" class="hidden"></div>
+
+        <!-- ======================================================
+             写真フィルターパネル（position: fixed）
+             ====================================================== -->
+        <div id="filter-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>写真フィルター</h3>
+                <button id="filter-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="filter-list" class="filter-grid"></div>
+        </div>
+
+        <!-- ======================================================
+             Face AR デコレーションパネル（position: fixed）
+             ====================================================== -->
+        <div id="face-filter-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>Face AR デコレーション</h3>
+                <button id="face-filter-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="face-filter-list" class="face-filter-list"></div>
+        </div>
+
+        <!-- ======================================================
+             メッセージ編集パネル（position: fixed）
+             ====================================================== -->
+        <div id="message-editor" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>表示メッセージ</h3>
+                <button id="message-editor-close" class="close-btn">✕</button>
+            </div>
+            <div class="message-editor-content">
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-date" data-i18n="msg_date_label">日付</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-date-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <input type="date" id="message-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-text" data-i18n="msg_text_label">メッセージ</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-text-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <input type="text" id="message-text" class="form-input"
+                           placeholder="お誕生日おめでとうございます"
+                           maxlength="40" value="お誕生日おめでとうございます">
+                </div>
+                <div class="form-group">
+                    <div class="form-group-header">
+                        <label for="message-location" data-i18n="msg_location_label">場所</label>
+                        <label class="toggle-label-inline">
+                            <input type="checkbox" id="message-location-enable" checked>
+                            <span data-i18n="msg_show">表示</span>
+                        </label>
+                    </div>
+                    <div class="location-input-group">
+                        <input type="text" id="message-location" class="form-input location-readonly" readonly>
+                        <button type="button" id="edit-location-btn" class="btn-edit-location">編集</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-group-header" data-i18n="msg_position_label">メッセージ位置</label>
+                    <div class="msg-position-grid" id="msg-position-grid">
+                        <button class="pos-btn" data-pos="top-left">左上</button>
+                        <button class="pos-btn" data-pos="top-center">中央上</button>
+                        <button class="pos-btn" data-pos="top-right">右上</button>
+                        <button class="pos-btn" data-pos="bottom-left">左下</button>
+                        <button class="pos-btn active" data-pos="bottom-center">中央下</button>
+                        <button class="pos-btn" data-pos="bottom-right">右下</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-group-header" data-i18n="msg_size_label">文字サイズ</label>
+                    <div class="msg-size-btns" id="msg-size-btns">
+                        <button class="size-btn" data-size="12">小</button>
+                        <button class="size-btn active" data-size="16">中</button>
+                        <button class="size-btn" data-size="22">大</button>
+                    </div>
+                </div>
+
+                <button id="message-apply" class="btn btn-primary btn-full">適用</button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+             フレーム選択パネル（position: fixed）
+             ====================================================== -->
+        <div id="frame-selector" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>フレームを選択</h3>
+                <button id="frame-selector-close" class="close-btn">✕</button>
+            </div>
+            <div id="frame-list" class="frame-list"></div>
+        </div>
+
+        <!-- ======================================================
+             印刷設定パネル
+             ====================================================== -->
+        <div id="print-settings-panel" class="bottom-panel">
+            <div class="panel-header">
+                <h3 data-i18n="print_settings_title">印刷設定</h3>
+                <button id="print-settings-close" class="close-btn">✕</button>
+            </div>
+            <div class="print-settings-body">
+                <div class="print-setting-group">
+                    <label class="print-setting-label" data-i18n="print_ratio_label">写真の比率</label>
+                    <div class="print-ratio-btns" id="print-ratio-btns">
+                        <button class="ratio-btn active" data-ratio="1:1">1:1</button>
+                        <button class="ratio-btn" data-ratio="2:3">2:3</button>
+                        <button class="ratio-btn" data-ratio="9:16">9:16</button>
+                    </div>
+                </div>
+                <div class="print-setting-group">
+                    <label class="print-setting-label" data-i18n="print_margin_label">余白</label>
+                    <div class="print-margin-row">
+                        <select id="print-margin-pos" class="form-input">
+                            <option value="none" data-i18n-opt="margin_none">なし</option>
+                            <option value="top" data-i18n-opt="margin_top">写真の上</option>
+                            <option value="bottom" data-i18n-opt="margin_bottom">写真の下</option>
+                        </select>
+                        <div class="print-margin-slider-wrap" id="margin-slider-wrap" style="display:none;">
+                            <input type="range" id="print-margin-cm" min="0" max="7" step="0.5" value="2">
+                            <span id="print-margin-value">2.0cm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- パネル外タップで閉じるオーバーレイ -->
+        <div id="panel-overlay" class="panel-overlay"></div>
+
+    </div><!-- /#camera-screen -->
+
+    <!-- ================================================================
+         結果画面
+         ================================================================ -->
+    <div id="result-screen" class="screen">
+        <div class="result-header">
+            <span class="result-header-title" data-i18n="result_title">-- 印刷プレビュー --</span>
+        </div>
+        <div id="result-container">
+            <canvas id="result-canvas" style="display:none;"></canvas>
+            <img id="result-image" alt="撮影写真" style="display:none;">
+            <div id="receipt-preview" class="receipt-preview">
+                <div class="receipt-paper">
+                    <div class="rp-title">AR Photo &amp; Print</div>
+                    <hr class="rp-divider">
+                    <div id="rp-margin-top" class="rp-margin"></div>
+                    <div id="rp-photo-wrap" class="rp-photo-wrap">
+                        <img id="rp-photo" alt="preview">
+                    </div>
+                    <div id="rp-margin-bottom" class="rp-margin"></div>
+                    <hr class="rp-divider">
+                    <div id="rp-info" class="rp-info"></div>
+                    <hr class="rp-divider">
+                    <div class="rp-footer">Thank you!</div>
+                    <div class="rp-cut">- - - - - - - - - - - - -</div>
+                </div>
+            </div>
+        </div>
+        <!-- <p id="result-hint" class="save-hint">画像を長押しして「写真に保存」もできます</p> -->
+        <div id="result-controls">
+            <button id="retake-btn"   class="btn btn-secondary" data-i18n="retake_btn">再撮影</button>
+            <button id="print-btn"    class="btn btn-print"     data-i18n="print_btn">レシート印刷</button>
+            <button id="share-btn"    class="btn-share-icon" title="共有" aria-label="共有">📤</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         エラー画面
+         ================================================================ -->
+    <div id="error-screen" class="screen">
+        <div class="error-message">
+            <p id="error-text" data-i18n="error_camera">カメラへのアクセスを許可してください</p>
+            <button id="retry-btn" class="btn btn-primary" data-i18n="retry_btn">再試行</button>
+        </div>
+    </div>
+
+</div><!-- /#app -->
+
+<!-- 印刷ステータスオーバーレイ -->
+<div id="print-status-overlay" class="print-status-overlay" style="display:none;">
+    <div class="print-spinner"></div>
+    <div id="print-status" class="print-status-text"></div>
+</div>
+
+<!-- ================================================================
+     スクリプト読み込み順序:
+     app.js（DOM変数定義）→ モジュール群 → ui.js（イベント登録）
+     ================================================================ -->
+<script src="js/i18n.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/app.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/filter.js"></script>
+<script src="js/face-filter.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/printer.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
