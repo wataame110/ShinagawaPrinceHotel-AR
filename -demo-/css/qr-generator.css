@@ -1,0 +1,179 @@
+/*
+ * ======================================================================
+ * qr-generator.css — QRコード生成ツール専用スタイル
+ * 品川プリンスホテル 管理ツール用デザイン
+ * ======================================================================
+ */
+
+/* ── CSS カスタムプロパティ ─────────────────────────────────── */
+:root {
+    --color-gold:  #D4AF37;
+    --color-navy:  #1a2332;
+    --color-cream: #FAF9F6;
+}
+
+/* ── リセット ────────────────────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── ボディ ────────────────────────────────────────────── */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
+    background: linear-gradient(135deg, var(--color-navy) 0%, #2c3e50 100%);
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+/* ── コンテナ ─────────────────────────────────────────── */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ── 見出し ────────────────────────────────────────────── */
+h1 {
+    color: var(--color-gold);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 32px;
+}
+
+.subtitle {
+    color: var(--color-cream);
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+/* ── 入力セクション ──────────────────────────────────────── */
+.input-section {
+    background: rgba(26, 35, 50, 0.95);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 2px solid var(--color-gold);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    color: var(--color-cream);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(250, 249, 246, 0.1);
+    color: var(--color-cream);
+    font-size: 16px;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+}
+
+/* ── ボタン ────────────────────────────────────────────── */
+.btn {
+    background: linear-gradient(135deg, var(--color-gold) 0%, #B8941E 100%);
+    color: var(--color-navy);
+    padding: 14px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin: 5px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+}
+
+/* ── QRコードグリッド ────────────────────────────────────── */
+.qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+
+/* ── QRコードカード ──────────────────────────────────────── */
+.qr-card {
+    background: rgba(26, 35, 50, 0.95);
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid var(--color-gold);
+    text-align: center;
+}
+
+.qr-card h3 {
+    color: var(--color-gold);
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.qr-card p {
+    color: var(--color-cream);
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+/* ── パスワード表示 ──────────────────────────────────────── */
+.password-display {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--color-gold);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    color: var(--color-gold);
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* ── QRコード枠 ─────────────────────────────────────────── */
+.qr-code {
+    margin: 20px 0;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+/* ── URL 表示 ────────────────────────────────────────────── */
+.url-display {
+    background: rgba(250, 249, 246, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    word-break: break-all;
+    color: var(--color-cream);
+    font-size: 12px;
+    margin: 10px 0;
+}
+
+/* ── ボタングループ ──────────────────────────────────────── */
+.btn-group {
+    margin-top: 15px;
+}
+
+/* ── ホテルロゴ画像 ──────────────────────────────────────── */
+.hotel-logo-img {
+    max-width: 180px;
+    width: 60%;
+    height: auto;
+    display: block;
+    margin: 0 auto 10px;
+}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- 
+    ======================================================================
+    品川プリンスホテル - レストラン認証ログイン画面
+    ======================================================================
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#D4AF37">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon.ico">
+    <title>ログイン - 品川プリンスホテル</title>
+    <!-- ログイン画面専用スタイルシート -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/login.css">
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FN6X4ZH0QT"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FN6X4ZH0QT', { transport_type: 'beacon' });
+    </script>
+
+    <!-- i18n を最初に読み込む（スクリプト内で t() を使用するため） -->
+    <script src="js/i18n.js"></script>
+</head>
+<body>
+    <!-- ローディングオーバーレイ -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- 言語セレクター（右上固定） -->
+    <div id="login-lang-anchor" style="position:fixed;top:16px;right:16px;z-index:500;"></div>
+
+    <!-- ログインコンテナ -->
+    <div class="login-container">
+        <!-- ホテルロゴ -->
+        <div class="hotel-logo">
+            <img src="assets/images/logo-shinagawa-prince.png"
+                 alt="品川プリンスホテル" class="hotel-logo-img">
+            <p class="login-hotel-tagline" data-i18n="login_hotel_tagline">記念日フォトフレーム</p>
+        </div>
+
+        <!-- レストラン情報表示エリア -->
+        <div id="restaurant-info" class="restaurant-info">
+            <h3 id="restaurant-name"></h3>
+            <p id="restaurant-description"></p>
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div id="error-message" class="error-message"></div>
+
+        <!-- ログインフォーム -->
+        <form id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="password-input" data-i18n="login_password_label">パスワード</label>
+                <input
+                    type="password"
+                    id="password-input"
+                    name="password"
+                    data-i18n="login_password_placeholder"
+                    placeholder="レストランのパスワードを入力"
+                    autocomplete="off"
+                    required
+                >
+            </div>
+
+            <button type="submit" id="login-btn" class="login-btn"
+                    data-i18n="login_btn">ログイン</button>
+        </form>
+
+        <!-- フッター注記 -->
+        <div class="footer-note">
+            <p class="login-qr-hint" data-i18n="login_qr_hint">
+                各レストランのQRコードをスキャンしてください
+            </p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ログイン認証スクリプト
+         * i18n.js が head で読み込まれているため t() が使用可能
+         */
+
+        // ======================================================
+        // HTTPS セキュアコンテキストチェック
+        // ======================================================
+        (function() {
+            const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+            if (!window.isSecureContext && !isLocalhost) {
+                const lang = localStorage.getItem('sph_lang') || 'ja';
+                const messages = {
+                    ja: 'このアプリはHTTPS環境でのみ動作します。\nHTTPSでアクセスし直してください。',
+                    en: 'This app requires a secure HTTPS connection.\nPlease reload via HTTPS.',
+                    'zh-CN': '此应用需要HTTPS安全连接。\n请通过HTTPS重新访问。',
+                    'zh-TW': '此應用程式需要HTTPS安全連線。\n請透過HTTPS重新存取。',
+                    ko:  '이 앱은 HTTPS 보안 연결이 필요합니다.\nHTTPS로 다시 접속해 주세요.',
+                    fr:  'Cette application nécessite une connexion HTTPS sécurisée.\nVeuillez vous reconnecter via HTTPS.',
+                    es:  'Esta aplicación requiere una conexión HTTPS segura.\nVuelva a acceder mediante HTTPS.',
+                    de:  'Diese App erfordert eine sichere HTTPS-Verbindung.\nBitte rufen Sie die Seite über HTTPS auf.',
+                    pt:  'Este aplicativo requer uma conexão HTTPS segura.\nAcesse novamente via HTTPS.',
+                };
+                const msg = messages[lang] || messages['ja'];
+                document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#111;color:#fff;font-size:1rem;text-align:center;padding:2rem;white-space:pre-line;font-family:sans-serif;">${msg}</div>`;
+            }
+        })();
+
+        // DOM要素取得
+        const loginForm           = document.getElementById('login-form');
+        const passwordInput       = document.getElementById('password-input');
+        const errorMessage        = document.getElementById('error-message');
+        const loadingOverlay      = document.getElementById('loading-overlay');
+        const restaurantInfo      = document.getElementById('restaurant-info');
+        const restaurantName      = document.getElementById('restaurant-name');
+        const restaurantDescription = document.getElementById('restaurant-description');
+
+        // URLパラメータ取得
+        const urlParams    = new URLSearchParams(window.location.search);
+        const restaurantId = urlParams.get('restaurant');
+
+        let restaurantsData = null;
+
+        /**
+         * レストラン情報読み込み
+         */
+        async function loadRestaurants() {
+            try {
+                const response  = await fetch('assets/config/restaurants.json');
+                restaurantsData = await response.json();
+
+                if (restaurantId && restaurantsData) {
+                    const restaurant = restaurantsData.restaurants.find(r => r.id === restaurantId);
+                    if (restaurant) {
+                        restaurantName.textContent       = restaurant.fullName;
+                        restaurantDescription.textContent = restaurant.description;
+                        restaurantInfo.classList.add('active');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load restaurants:', error);
+            }
+        }
+
+        /**
+         * エラー表示（i18n 対応）
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            setTimeout(() => errorMessage.classList.remove('active'), 3000);
+        }
+
+        /**
+         * ログイン処理
+         */
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const password = passwordInput.value.trim();
+
+            if (!password) {
+                // t() は i18n.js が head で読み込まれているため使用可能
+                showError(typeof t === 'function'
+                    ? t('login_error_empty')
+                    : 'パスワードを入力してください');
+                return;
+            }
+
+            loadingOverlay.classList.add('active');
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            let authenticated         = false;
+            let authenticatedRestaurant = null;
+
+            if (restaurantId && restaurantsData) {
+                const restaurant = restaurantsData.restaurants.find(r => r.id === restaurantId);
+                if (restaurant && restaurant.password === password) {
+                    authenticated           = true;
+                    authenticatedRestaurant = restaurant;
+                }
+            } else if (restaurantsData) {
+                authenticatedRestaurant = restaurantsData.restaurants.find(r => r.password === password);
+                if (authenticatedRestaurant) authenticated = true;
+            }
+
+            loadingOverlay.classList.remove('active');
+
+            if (authenticated && authenticatedRestaurant) {
+                sessionStorage.setItem('authenticated',   'true');
+                sessionStorage.setItem('restaurantId',    authenticatedRestaurant.id);
+                sessionStorage.setItem('restaurantName',  authenticatedRestaurant.name);
+
+                const dest = `index.html?restaurant=${authenticatedRestaurant.id}`;
+                if (typeof gtag === 'function') {
+                    gtag('event', 'login', {
+                        method: 'password',
+                        restaurant_id: authenticatedRestaurant.id,
+                        restaurant_name: authenticatedRestaurant.name,
+                        event_callback: function() { window.location.href = dest; },
+                        event_timeout: 1500
+                    });
+                    setTimeout(function() { window.location.href = dest; }, 1500);
+                } else {
+                    window.location.href = dest;
+                }
+            } else {
+                showError(typeof t === 'function'
+                    ? t('login_error')
+                    : 'パスワードが正しくありません');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // イベントリスナー登録
+        loginForm.addEventListener('submit', handleLogin);
+
+        // 初期化（言語セレクターを追加して保存済み言語を即時適用）
+        window.addEventListener('load', () => {
+            loadRestaurants();
+            if (typeof buildLanguageSelector === 'function') {
+                buildLanguageSelector('login-lang-anchor');
+            }
+            passwordInput.focus();
+        });
+    </script>
+</body>
+</html>
