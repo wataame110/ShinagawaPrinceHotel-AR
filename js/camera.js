@@ -45,8 +45,10 @@ async function initCamera(facingMode) {
             setTimeout(() => reject(new Error('Camera timeout')), 10000);
         });
 
-        // インカメラ時のみ映像を左右反転（自撮り鏡像表示）
-        cameraVideo.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+        // カメラ方向に応じて反転フラグを自動設定（手動上書きがなければ）
+        cameraFlipped = (currentFacingMode === 'user');
+        cameraVideo.style.transform = cameraFlipped ? 'scaleX(-1)' : 'scaleX(1)';
+        updateBgCanvasFlip();
 
         // カメラ切り替えボタンのアイコンを更新
         updateSwitchCameraBtn();
@@ -105,7 +107,9 @@ async function initCameraWithFallback() {
             setTimeout(() => reject(new Error('Fallback camera timeout')), 10000);
         });
 
-        cameraVideo.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+        cameraFlipped = (currentFacingMode === 'user');
+        cameraVideo.style.transform = cameraFlipped ? 'scaleX(-1)' : 'scaleX(1)';
+        updateBgCanvasFlip();
         updateSwitchCameraBtn();
 
         loadingOverlay.classList.add('hidden');
@@ -115,6 +119,27 @@ async function initCameraWithFallback() {
         console.error('Fallback camera error:', error);
         loadingOverlay.classList.add('hidden');
         showError('カメラの起動に失敗しました。\nデバイスを再起動してください。');
+    }
+}
+
+/**
+ * カメラの左右反転を手動で切り替え（設定パネルから呼ばれる）
+ */
+function toggleCameraFlip(forceValue) {
+    cameraFlipped = (forceValue !== undefined) ? forceValue : !cameraFlipped;
+    if (cameraVideo) {
+        cameraVideo.style.transform = cameraFlipped ? 'scaleX(-1)' : 'scaleX(1)';
+    }
+    updateBgCanvasFlip();
+}
+
+/**
+ * 背景合成キャンバスの反転を同期
+ */
+function updateBgCanvasFlip() {
+    var bgCanvas = document.getElementById('bg-composite-canvas');
+    if (bgCanvas) {
+        bgCanvas.style.transform = cameraFlipped ? 'scaleX(-1)' : 'scaleX(1)';
     }
 }
 

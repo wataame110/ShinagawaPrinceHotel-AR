@@ -71,27 +71,29 @@ function captureImage() {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // ---- レイヤー 1: カメラ映像（写真フィルター適用） ----
-        // Canvas filter API でリアルタイムプレビューと同じフィルターを適用
-        const filterStr = (typeof getCanvasFilterString === 'function') ? getCanvasFilterString() : 'none';
-        ctx.filter = filterStr;
-
-        if (currentFacingMode === 'user') {
-            ctx.save();
-            ctx.translate(outW, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
-            ctx.restore();
-        } else {
-            ctx.drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+        // ---- レイヤー 1: カメラ映像 or 背景合成 ----
+        var _bgDrawn = false;
+        if (typeof bgCompositeMode !== 'undefined' && bgCompositeMode &&
+            typeof drawBgCompositeOnCanvas === 'function') {
+            _bgDrawn = drawBgCompositeOnCanvas(ctx, outW, outH);
         }
 
-        ctx.filter = 'none';
+        if (!_bgDrawn) {
+            // 通常モード: カメラ映像を直接描画
+            if (cameraFlipped) {
+                ctx.save();
+                ctx.translate(outW, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+                ctx.restore();
+            } else {
+                ctx.drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+            }
+        }
 
-        // ---- レイヤー 1b: ピクセル操作フィルター（grain/glow 等） ----
-        const _currentFilter = (typeof getCurrentFilter === 'function') ? getCurrentFilter() : null;
-        if (_currentFilter && _currentFilter.apply) {
-            _currentFilter.apply(ctx, outW, outH);
+        // ---- レイヤー 1b: 写真フィルター（ピクセル操作で全ブラウザ対応） ----
+        if (typeof applyFilterToCanvas === 'function') {
+            try { applyFilterToCanvas(ctx, outW, outH); } catch (_) {}
         }
 
         // ---- レイヤー 2: 顔 AR 装飾 ----
@@ -99,8 +101,8 @@ function captureImage() {
             try { drawFaceFilterOnCanvas(ctx, outW, outH); } catch (_) {}
         }
 
-        // ---- レイヤー 3: フレーム画像 ----
-        if (frameImage && frameImage.complete && frameImage.naturalWidth > 0) {
+        // ---- レイヤー 3: フレーム画像（背景合成モード時はスキップ） ----
+        if (!_bgDrawn && frameImage && frameImage.complete && frameImage.naturalWidth > 0) {
             try { ctx.drawImage(frameImage, 0, 0, outW, outH); } catch (_) {}
         }
 

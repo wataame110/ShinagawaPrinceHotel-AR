@@ -57,14 +57,17 @@ async function loadFramesConfig() {
             console.warn('loadFramesConfig: restaurant not found for id:', authId);
         }
 
-        // レストラン独自フレーム2種（なければ空）
-        const ownFrames    = (framesData.restaurantFrames && framesData.restaurantFrames[authId]) || [];
-        // 共通フレーム
-        const commonFrames = framesData.commonFrames || [];
+        // レストラン独自フレーム（disabled フラグが true のものは除外）
+        const ownFrames    = ((framesData.restaurantFrames && framesData.restaurantFrames[authId]) || []).filter(f => !f.disabled);
+        // 共通フレーム（disabled フラグが true のものは除外）
+        const commonFrames = (framesData.commonFrames || []).filter(f => !f.disabled);
+
+        // 背景合成画像（disabled フラグが true のものは除外）
+        const bgImages = (framesData.backgroundImages || []).filter(f => !f.disabled).map(f => ({ ...f, isBgImage: true }));
 
         // 先頭に「なし」を追加
         const NO_FRAME = { id: 'no_frame', name: 'なし', path: null, thumbnail: null, isNone: true };
-        const allFrames = [NO_FRAME, ...ownFrames, ...commonFrames];
+        const allFrames = [NO_FRAME, ...ownFrames, ...commonFrames, ...bgImages];
 
         framesConfig = { hotelName: framesData.hotelName || '品川プリンスホテル', frames: allFrames };
 
@@ -115,13 +118,15 @@ function renderFrameList() {
     const lang = (typeof currentLang !== 'undefined') ? currentLang : 'ja';
     const t    = (typeof I18N !== 'undefined' && I18N[lang]) ? I18N[lang] : {};
 
-    // フレームを 3 グループに分類
+    // フレームを 4 グループに分類
     const noneFrames   = framesConfig.frames.filter(f =>  f.isNone);
-    const ownFrames    = framesConfig.frames.filter(f => !f.isNone && !f.id.startsWith('common'));
-    const commonFrames = framesConfig.frames.filter(f => !f.isNone &&  f.id.startsWith('common'));
+    const ownFrames    = framesConfig.frames.filter(f => !f.isNone && !f.isBgImage && !f.id.startsWith('common'));
+    const commonFrames = framesConfig.frames.filter(f => !f.isNone && !f.isBgImage &&  f.id.startsWith('common'));
+    const bgFrames     = framesConfig.frames.filter(f =>  f.isBgImage);
 
     const ownLabel    = t.frame_section_own    || 'レストランオリジナル';
     const commonLabel = t.frame_section_common || '共通フレーム';
+    const bgLabel     = t.frame_section_bg     || '背景合成';
 
     /** フレームアイテム DOM を生成 */
     function buildItem(frame) {
@@ -136,6 +141,16 @@ function renderFrameList() {
                 <div class="frame-item-none">
                     <span class="frame-none-icon">✕</span>
                     <span class="frame-none-label">${t.frame_none || 'フレームなし'}</span>
+                </div>
+                <div class="frame-item-name">${frame.name}</div>
+            `;
+        } else if (frame.isBgImage) {
+            const thumbSrc = frame.thumbnail || frame.path || 'assets/images/frames/frame-placeholder.png';
+            item.innerHTML = `
+                <div class="frame-thumb-wrap">
+                    <img src="${thumbSrc}" alt="${frame.name}"
+                         onerror="this.onerror=null;this.src='assets/images/frames/frame-placeholder.png'">
+                    <span class="frame-badge-bg">BG</span>
                 </div>
                 <div class="frame-item-name">${frame.name}</div>
             `;
@@ -177,6 +192,7 @@ function renderFrameList() {
 
     appendSection(firstLabel, firstGroup);          // なし + レストランオリジナル
     appendSection(commonLabel, commonFrames);        // 共通フレーム
+    appendSection(bgLabel, bgFrames);                // 背景合成
 }
 
 /** フレームを選択して適用 */
@@ -186,11 +202,28 @@ function selectFrame(frameId) {
     if (!frame) return;
     currentFrameName = frame.name || frameId;
 
-    if (frame.isNone) {
-        // 「なし」: フレームオーバーレイを非表示にして frameImage を null に
+    if (frame.isBgImage) {
+        // ---- 背景合成モード ----
+        // 背景画像を読み込んでから合成開始
+        var bgImg = new Image();
+        bgImg.crossOrigin = 'anonymous';
+        bgImg.onload = function() {
+            if (typeof startBgComposite === 'function') {
+                startBgComposite(bgImg);
+            }
+        };
+        bgImg.onerror = function() {
+            console.warn('[BG] Failed to load background image:', frame.path);
+        };
+        bgImg.src = frame.path;
+    } else if (frame.isNone) {
+        // ---- なし: フレームも背景合成もオフ ----
+        if (typeof stopBgComposite === 'function') stopBgComposite();
         frameImage = null;
         if (frameOverlay) { frameOverlay.src = ''; frameOverlay.style.opacity = '0'; }
     } else {
+        // ---- 通常フレーム ----
+        if (typeof stopBgComposite === 'function') stopBgComposite();
         if (frameOverlay) frameOverlay.style.opacity = '1';
         frameOverlay.src = frame.path || '';
         loadFrameImage(frame.path);
@@ -385,6 +418,8 @@ function closeAllPanels() {
     if (messageEditor)      messageEditor.classList.remove('active');
     if (filterSelector)     filterSelector.classList.remove('active');
     if (faceFilterSelector) faceFilterSelector.classList.remove('active');
+    var settingsPanel = document.getElementById('settings-panel');
+    if (settingsPanel)      settingsPanel.classList.remove('active');
     hidePanelOverlay();
 }
 
@@ -485,6 +520,30 @@ document.getElementById('face-filter-selector-close')?.addEventListener('click',
     closeAllPanels();
 });
 
+// --- 設定パネル ---
+document.getElementById('settings-toggle')?.addEventListener('click', () => {
+    closeAllPanels();
+    var panel = document.getElementById('settings-panel');
+    if (panel) {
+        // ミラートグルの状態を同期
+        var mirrorCb = document.getElementById('settings-mirror-toggle');
+        if (mirrorCb) mirrorCb.checked = (typeof cameraFlipped !== 'undefined') ? cameraFlipped : false;
+        panel.classList.add('active');
+        panel.classList.remove('hidden');
+        showPanelOverlay();
+    }
+});
+
+document.getElementById('settings-panel-close')?.addEventListener('click', () => {
+    closeAllPanels();
+});
+
+document.getElementById('settings-mirror-toggle')?.addEventListener('change', (e) => {
+    if (typeof toggleCameraFlip === 'function') {
+        toggleCameraFlip(e.target.checked);
+    }
+});
+
 // --- 撮影ボタン ---
 captureBtn.addEventListener('click', () => {
     if (typeof initAudioContext === 'function') initAudioContext(); // iOS: ユーザー操作で AudioContext 解放
@@ -500,11 +559,9 @@ document.getElementById('retake-btn')?.addEventListener('click', () => {
     if (rImg) { rImg.style.display = 'none'; rImg.src = ''; }
     if (resultCanvas) resultCanvas.style.display = 'block';
     showScreen('camera');
-    // selectFaceDecoration 経由で再起動（gen 管理を一元化）
-    if (typeof selectFaceDecoration === 'function' &&
-        typeof currentDecorationId !== 'undefined' &&
-        currentDecorationId !== 'none') {
-        selectFaceDecoration(currentDecorationId);
+    // Face AR ループを再起動（カテゴリ併用対応）
+    if (typeof restartActiveFaceLoop === 'function') {
+        restartActiveFaceLoop();
     }
 });
 
@@ -528,5 +585,6 @@ logoutBtn?.addEventListener('click', () => {
     sessionStorage.clear();
     stopCamera();
     if (typeof stopFaceLoop === 'function') stopFaceLoop();
+    if (typeof stopBgComposite === 'function') stopBgComposite();
     window.location.href = 'login.html';
 });
