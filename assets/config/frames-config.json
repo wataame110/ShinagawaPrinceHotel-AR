@@ -129,15 +129,15 @@
       {
         "id": "table9_original_1",
         "name": "TABLE 9 オリジナル①",
-        "path": "assets/images/frames/restaurants/DININGBAR TABLE 9 TOKYO_01.png",
-        "thumbnail": "assets/images/frames/restaurants/DININGBAR TABLE 9 TOKYO_01.png",
+        "path": "assets/images/frames/restaurants/diningbartable9tokyo_01.png",
+        "thumbnail": "assets/images/frames/restaurants/diningbartable9tokyo_01.png",
         "_note": "差し替え先: assets/images/frames/restaurants/table9/table9_frame1.png"
       },
       {
         "id": "table9_original_2",
         "name": "TABLE 9 オリジナル②",
-        "path": "assets/images/frames/restaurants/DININGBAR TABLE 9 TOKYO_02.png",
-        "thumbnail": "assets/images/frames/restaurants/DININGBAR TABLE 9 TOKYO_02.png",
+        "path": "assets/images/frames/restaurants/diningbartable9tokyo_02.png",
+        "thumbnail": "assets/images/frames/restaurants/diningbartable9tokyo_02.png",
         "_note": "差し替え先: assets/images/frames/restaurants/table9/table9_frame2.png"
       }
     ],
@@ -145,15 +145,15 @@
       {
         "id": "hapuna_original_1",
         "name": "HAPUNA オリジナル①",
-        "path": "assets/images/frames/restaurants/LUXE DINING HAPUNA_01.png",
-        "thumbnail": "assets/images/frames/restaurants/LUXE DINING HAPUNA_01.png",
+        "path": "assets/images/frames/restaurants/luxedininghapuna_01.png",
+        "thumbnail": "assets/images/frames/restaurants/luxedininghapuna_01.png",
         "_note": "差し替え先: assets/images/frames/restaurants/hapuna/hapuna_frame1.png"
       },
       {
         "id": "hapuna_original_2",
         "name": "HAPUNA オリジナル②",
-        "path": "assets/images/frames/restaurants/LUXE DINING HAPUNA_02.png",
-        "thumbnail": "assets/images/frames/restaurants/LUXE DINING HAPUNA_02.png",
+        "path": "assets/images/frames/restaurants/luxedininghapuna_02.png",
+        "thumbnail": "assets/images/frames/restaurants/luxedininghapuna_02.png",
         "_note": "差し替え先: assets/images/frames/restaurants/hapuna/hapuna_frame2.png"
       }
     ],
