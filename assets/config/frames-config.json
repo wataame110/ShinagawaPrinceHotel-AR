@@ -14,111 +14,107 @@
     {
       "id": "common_iy02",
       "name": "ピンクフローラル",
-      "path": "assets/images/frames/common/common_iy02.png",
-      "thumbnail": "assets/images/frames/common/common_iy02.png",
+      "path": "assets/images/frames/common/1-common_iy02.png",
+      "thumbnail": "assets/images/frames/common/1-common_iy02.png",
       "description": "淡いピンクの花々が彩る水彩風フレーム"
     },
     {
       "id": "common_k01",
       "name": "リーフアーチ",
-      "path": "assets/images/frames/common/common_k01.png",
-      "thumbnail": "assets/images/frames/common/common_k01.png",
+      "path": "assets/images/frames/common/2-common_k01.png",
+      "thumbnail": "assets/images/frames/common/2-common_k01.png",
       "description": "緑のリーフアーチが美しいナチュラルフレーム"
     },
     {
       "id": "common_k03",
       "name": "カラフルフラワー",
-      "path": "assets/images/frames/common/common_k03.png",
-      "thumbnail": "assets/images/frames/common/common_k03.png",
+      "path": "assets/images/frames/common/3-common_k03.png",
+      "thumbnail": "assets/images/frames/common/3-common_k03.png",
       "description": "色とりどりの花が咲き誇るカラフルフレーム"
     },
     {
       "id": "common_i1",
       "name": "グリーンスクロール",
-      "path": "assets/images/frames/common/common_i1.png",
-      "thumbnail": "assets/images/frames/common/common_i1.png",
+      "path": "assets/images/frames/common/4-common_i1.png",
+      "thumbnail": "assets/images/frames/common/4-common_i1.png",
       "description": "グリーンのつた模様が優雅に絡まるフレーム"
     },
     {
       "id": "common_i3",
       "name": "和風レッド",
-      "path": "assets/images/frames/common/common_i3.png",
-      "thumbnail": "assets/images/frames/common/common_i3.png",
+      "path": "assets/images/frames/common/5-common_i3.png",
+      "thumbnail": "assets/images/frames/common/5-common_i3.png",
       "description": "紅梅と水引が美しい和モダンフレーム"
     },
     {
       "id": "common_m01",
       "name": "アールヌーボー",
-      "path": "assets/images/frames/common/common_m01.png",
-      "thumbnail": "assets/images/frames/common/common_m01.png",
+      "path": "assets/images/frames/common/6-common_m01.png",
+      "thumbnail": "assets/images/frames/common/6-common_m01.png",
       "description": "アーチ型のアールヌーボー装飾フレーム"
     },
     {
       "id": "common_pink_floral",
       "name": "ピンクバルーン",
-      "path": "assets/images/frames/common/common_pink_floral.png",
-      "thumbnail": "assets/images/frames/common/common_pink_floral.png",
-      "description": "鮮やかなピンクの花が咲き誇る華やかフレーム"
+      "path": "assets/images/frames/common/7-pinkballoon.png",
+      "thumbnail": "assets/images/frames/common/7-pinkballoon.png",
+      "description": "お祝いを華やかに飾るピンクのバルーン装飾フレーム"
     },
     {
       "id": "common_blue_floral",
       "name": "ブルーフローラル",
-      "path": "assets/images/frames/common/common_blue_floral.png",
-      "thumbnail": "assets/images/frames/common/common_blue_floral.png",
+      "path": "assets/images/frames/common/8-common_blue_floral.png",
+      "thumbnail": "assets/images/frames/common/8-common_blue_floral.png",
       "description": "青い花々が涼しげに彩るエレガントフレーム"
     },
     {
       "id": "common_colorful_flower",
-      "name": "フラワーブーケ",
-      "path": "assets/images/frames/common/common_colorful_flower.png",
-      "thumbnail": "assets/images/frames/common/common_colorful_flower.png",
-      "description": "華やかな花束モチーフのお祝いフレーム"
+      "name": "Japan",
+      "path": "assets/images/frames/common/9-japanese-photoframe.png",
+      "thumbnail": "assets/images/frames/common/9-japanese-photoframe.png",
+      "description": "日本を代表するホテルで日本の文化と共に"
     },
     {
       "id": "common_green_vine",
-      "name": "ボタニカルグリーン",
-      "path": "assets/images/frames/common/common_green_vine.png",
-      "thumbnail": "assets/images/frames/common/common_green_vine.png",
-      "description": "ナチュラルなグリーンのつた模様フレーム"
+      "name": "Classical",
+      "path": "assets/images/frames/common/10-classicalframe.png",
+      "thumbnail": "assets/images/frames/common/10-classicalframe.png",
+      "description": "プリンスホテルの高級感や品格風格もどこか感じられるフレーム"
     },
     {
       "id": "common_cat",
       "name": "キャットフレーム",
-      "path": "assets/images/frames/common/common_cat.png",
-      "thumbnail": "assets/images/frames/common/common_cat.png",
+      "path": "assets/images/frames/common/11-common_cat.png",
+      "thumbnail": "assets/images/frames/common/11-common_cat.png",
       "description": "かわいい猫モチーフの遊び心あるフレーム"
     },
     {
       "id": "common_new_12",
-      "name": "新フレーム⑫",
-      "path": "assets/images/frames/common/animal5.png",
-      "thumbnail": "assets/images/frames/common/animal5.png",
-      "description": "（画像差し替え待ち）",
-      "_note": "画像を common_new_12.png として common/ フォルダに配置してください"
+      "name": "アニマル",
+      "path": "assets/images/frames/common/12-animal5.png",
+      "thumbnail": "assets/images/frames/common/12-animal5.png",
+      "description": "かわいらしい、ゆかいなどうぶつ達と一緒に撮影ができるフレーム"
     },
     {
       "id": "common_new_13",
-      "name": "新フレーム⑬",
-      "path": "assets/images/frames/common/flag.png",
-      "thumbnail": "assets/images/frames/common/flag.png.png",
-      "description": "（画像差し替え待ち）",
-      "_note": "画像を common_new_13.png として common/ フォルダに配置してください"
+      "name": "パーティーフラッグ",
+      "path": "assets/images/frames/common/13-flag.png",
+      "thumbnail": "assets/images/frames/common/13-flag.png",
+      "description": "記念日やパーティーを装飾するフラッグで撮影できるフレーム"
     },
     {
       "id": "common_new_14",
-      "name": "新フレーム⑭",
-      "path": "assets/images/frames/common/ribbonwine.png",
-      "thumbnail": "assets/images/frames/common/ribbonwine.png",
-      "description": "（画像差し替え待ち）",
-      "_note": "画像を common_new_14.png として common/ フォルダに配置してください"
+      "name": "リボンワイン",
+      "path": "assets/images/frames/common/14-ribbonwine.png",
+      "thumbnail": "assets/images/frames/common/14-ribbonwine.png",
+      "description": "肖像画を模様した円形フレームとワイングラスでエレガンスがフレーム撮影"
     },
     {
       "id": "common_new_15",
       "name": "新フレーム⑮",
-      "path": "assets/images/frames/common/common_new_15.png",
-      "thumbnail": "assets/images/frames/common/common_new_15.png",
-      "description": "（画像差し替え待ち）",
-      "_note": "画像を common_new_15.png として common/ フォルダに配置してください"
+      "path": "assets/images/frames/common/15-dolphin-photoframe.png",
+      "thumbnail": "assets/images/frames/common/15-dolphin-photoframe.png",
+      "description": "品川プリンスホテルの横には「マクセルアクアパーク」がある。ということで、アクアパーク風にイルカと撮影できるフレーム"
     }
   ],
 
