@@ -111,7 +111,7 @@
     },
     {
       "id": "common_new_15",
-      "name": "新フレーム⑮",
+      "name": "アクアリウム",
       "path": "assets/images/frames/common/15-dolphin-photoframe.png",
       "thumbnail": "assets/images/frames/common/15-dolphin-photoframe.png",
       "description": "品川プリンスホテルの横には「マクセルアクアパーク」がある。ということで、アクアパーク風にイルカと撮影できるフレーム"
@@ -334,128 +334,6 @@
       "path": "assets/images/frames/backgrounds/bg_test.jpg",
       "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
       "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_05",
-      "name": "背景⑤",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_06",
-      "name": "背景⑥",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_07",
-      "name": "背景⑦",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_08",
-      "name": "背景⑧",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_09",
-      "name": "背景⑨",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_10",
-      "name": "背景⑩",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像"
-    },
-    {
-      "id": "bg_11",
-      "name": "背景⑪",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_12",
-      "name": "背景⑫",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_13",
-      "name": "背景⑬",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_14",
-      "name": "背景⑭",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_15",
-      "name": "背景⑮",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_16",
-      "name": "背景⑯",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_17",
-      "name": "背景⑰",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_18",
-      "name": "背景⑱",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_19",
-      "name": "背景⑲",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
-    },
-    {
-      "id": "bg_20",
-      "name": "背景⑳",
-      "path": "assets/images/frames/backgrounds/bg_test.jpg",
-      "thumbnail": "assets/images/frames/backgrounds/bg_test.jpg",
-      "description": "（差し替え待ち）テスト用背景画像",
-      "disabled": true
     }
   ]
 }
