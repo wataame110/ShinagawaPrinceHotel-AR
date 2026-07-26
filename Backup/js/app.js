@@ -86,6 +86,14 @@ let stream = null;
 let currentFacingMode = 'environment';
 
 /**
+ * カメラ左右反転フラグ
+ * true = 映像を左右反転表示（インカメラのデフォルト動作）
+ * ユーザーが設定パネルから手動で切り替え可能
+ * @type {boolean}
+ */
+let cameraFlipped = false;
+
+/**
  * 現在読み込まれているフレーム画像オブジェクト
  * @type {HTMLImageElement|null}
  */

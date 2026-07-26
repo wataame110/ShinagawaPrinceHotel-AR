@@ -61,9 +61,10 @@
 
             <div class="header-buttons">
                 <button id="filter-toggle"      class="hdr-btn" title="写真フィルター">🎞</button>
-                <button id="face-filter-toggle" class="hdr-btn" title="Face ARデコレーション">😄</button>
+                <!-- <button id="face-filter-toggle" class="hdr-btn" title="Face ARデコレーション">😄</button> -->
                 <button id="message-toggle"     class="hdr-btn" title="メッセージ編集">💬</button>
                 <button id="frame-select-toggle" class="hdr-btn" title="フレーム選択">🖼️</button>
+                <button id="settings-toggle"     class="hdr-btn" title="設定">⚙️</button>
                 <div id="lang-selector-anchor"></div>
             </div>
         </div>
@@ -75,6 +76,8 @@
                 <video id="camera-video" autoplay playsinline muted></video>
                 <img  id="frame-overlay" src="" alt="Frame"
                       onerror="this.onerror=null;this.style.opacity='0'">
+                <!-- 背景合成用 Canvas（video の上・frame の下） -->
+                <canvas id="bg-composite-canvas"></canvas>
                 <!-- 顔AR描画用 Canvas（video の上・frame の下） -->
                 <canvas id="face-filter-canvas"></canvas>
                 <!-- メッセージプレビューガイド -->
@@ -96,13 +99,13 @@
         <!-- ======================================================
              写真フィルターパネル（position: fixed）
              ====================================================== -->
-        <div id="filter-selector" class="bottom-panel hidden">
+        <!-- <div id="filter-selector" class="bottom-panel hidden">
             <div class="panel-header">
                 <h3>写真フィルター</h3>
                 <button id="filter-selector-close" class="close-btn">✕</button>
             </div>
             <div id="filter-list" class="filter-grid"></div>
-        </div>
+        </div> -->
 
         <!-- ======================================================
              Face AR デコレーションパネル（position: fixed）
@@ -161,7 +164,7 @@
                 </div>
 
                 <!-- 書体・サイズ・位置カスタマイズ -->
-                <div class="form-group msg-style-group">
+                <!-- <div class="form-group msg-style-group">
                     <label class="msg-style-label" data-i18n="msg_font_label">書体</label>
                     <select id="msg-font-select" class="form-input">
                         <option value="'MS Gothic', 'MS ゴシック', sans-serif">MS ゴシック</option>
@@ -178,7 +181,7 @@
                         <option value="'Kfont', sans-serif">けいふぉんと！</option>
                         <option value="'Ranobe POP', sans-serif">ラノベPOP</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="form-row-2col">
                     <div class="form-group">
                         <label class="msg-style-label" data-i18n="msg_size_label">サイズ</label>
@@ -214,6 +217,25 @@
                 <button id="frame-selector-close" class="close-btn">✕</button>
             </div>
             <div id="frame-list" class="frame-list"></div>
+        </div>
+
+        <!-- ======================================================
+             設定パネル（position: fixed）
+             ====================================================== -->
+        <div id="settings-panel" class="bottom-panel hidden">
+            <div class="panel-header">
+                <h3>設定</h3>
+                <button id="settings-panel-close" class="close-btn">✕</button>
+            </div>
+            <div class="settings-content">
+                <div class="settings-row">
+                    <span class="settings-label">🔄 カメラ左右反転</span>
+                    <label class="settings-toggle">
+                        <input type="checkbox" id="settings-mirror-toggle">
+                        <span class="settings-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <!-- パネル外タップで閉じるオーバーレイ -->
@@ -262,6 +284,7 @@
 <script src="js/sound.js"></script>
 <script src="js/filter.js"></script>
 <script src="js/face-filter.js"></script>
+<script src="js/background-seg.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/capture.js"></script>
 <script src="js/ui.js"></script>

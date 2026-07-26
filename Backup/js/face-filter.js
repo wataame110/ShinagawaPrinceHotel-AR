@@ -74,7 +74,8 @@ const FACE_DECORATIONS = [
 // ======================================================================
 
 let faceDecorationIntensity = 1.0;
-let currentDecorationId     = 'none';
+/** カテゴリ別の選択状態 Map<category, decoId> — 複数カテゴリの同時選択を管理 */
+let selectedDecorations     = new Map();
 let faceMesh                = null;
 let faceMeshReady           = false;
 let faceCanvas              = null;
@@ -305,11 +306,11 @@ function onFaceMeshResults(results) {
         resetTrackedFaces();
         return;
     }
-    if (currentDecorationId === 'none') return;
+    if (selectedDecorations.size === 0) return;
 
     const W = faceCanvas.width;
     const H = faceCanvas.height;
-    const isFlipped = (currentFacingMode === 'user');
+    const isFlipped = (typeof cameraFlipped !== 'undefined') ? cameraFlipped : (currentFacingMode === 'user');
 
     const disp = getObjectFitCoverOffset();
     if (!disp) return;
@@ -338,7 +339,10 @@ function onFaceMeshResults(results) {
         faceCtx.save();
         if (isFlipped) { faceCtx.translate(W, 0); faceCtx.scale(-1, 1); }
 
-        drawDecoration(faceCtx, currentDecorationId, coords, intensity);
+        // 選択中の全カテゴリのデコレーションを描画
+        for (const _decoId of selectedDecorations.values()) {
+            drawDecoration(faceCtx, _decoId, coords, intensity);
+        }
 
         faceCtx.restore();
     }
@@ -349,7 +353,7 @@ function onFaceMeshResults(results) {
 // ======================================================================
 
 function drawFaceFilterOnCanvas(ctx, w, h) {
-    if (!faceCanvas || currentDecorationId === 'none') return;
+    if (!faceCanvas || selectedDecorations.size === 0) return;
     ctx.drawImage(faceCanvas, 0, 0, w, h);
 }
 
@@ -870,9 +874,11 @@ function buildFaceFilterUI() {
         grid.className = 'face-filter-cat-grid';
 
         items.forEach(deco => {
+            const _isSel = deco.id === 'none'
+                ? selectedDecorations.size === 0
+                : selectedDecorations.get(deco.category) === deco.id;
             const btn = document.createElement('button');
-            btn.className = 'face-filter-btn' +
-                            (deco.id === currentDecorationId ? ' active' : '');
+            btn.className = 'face-filter-btn' + (_isSel ? ' active' : '');
             btn.dataset.id = deco.id;
             btn.innerHTML = `<span class="face-filter-icon">${deco.icon}</span>
                              <span class="face-filter-label">${deco.name}</span>`;
@@ -885,14 +891,33 @@ function buildFaceFilterUI() {
 }
 
 function selectFaceDecoration(id) {
-    currentDecorationId = id;
-    if (typeof trackFaceDecoUse === 'function') trackFaceDecoUse(id);
-
-    document.querySelectorAll('.face-filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.id === id);
-    });
-
     if (id === 'none') {
+        // 「なし」: 全カテゴリの選択をクリア
+        selectedDecorations.clear();
+        _updateFaceDecoUI();
+        stopFaceLoop();
+        if (faceCtx && faceCanvas) {
+            faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+        }
+        if (typeof trackFaceDecoUse === 'function') trackFaceDecoUse('none');
+        return;
+    }
+
+    const deco = FACE_DECORATIONS.find(d => d.id === id);
+    if (!deco) return;
+
+    // カテゴリ内トグル: 同じものを再タップ → 解除、別のもの → 切替
+    if (selectedDecorations.get(deco.category) === id) {
+        selectedDecorations.delete(deco.category);
+    } else {
+        selectedDecorations.set(deco.category, id);
+    }
+
+    if (typeof trackFaceDecoUse === 'function') trackFaceDecoUse(id);
+    _updateFaceDecoUI();
+
+    // 全て解除された場合はループ停止
+    if (selectedDecorations.size === 0) {
         stopFaceLoop();
         if (faceCtx && faceCanvas) {
             faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
@@ -900,6 +925,7 @@ function selectFaceDecoration(id) {
         return;
     }
 
+    // Face Mesh ループを開始/再起動
     faceLoopGen++;
     const myGen = faceLoopGen;
 
@@ -918,4 +944,44 @@ function selectFaceDecoration(id) {
     }
 }
 
-function getCurrentDecorationId() { return currentDecorationId; }
+/** 全ボタンの active クラスを現在の selectedDecorations に同期 */
+function _updateFaceDecoUI() {
+    document.querySelectorAll('.face-filter-btn').forEach(b => {
+        const bid = b.dataset.id;
+        if (bid === 'none') {
+            b.classList.toggle('active', selectedDecorations.size === 0);
+        } else {
+            const btnDeco = FACE_DECORATIONS.find(d => d.id === bid);
+            if (btnDeco) {
+                b.classList.toggle('active', selectedDecorations.get(btnDeco.category) === bid);
+            }
+        }
+    });
+}
+
+function getCurrentDecorationId() {
+    if (selectedDecorations.size === 0) return 'none';
+    return [...selectedDecorations.values()].join('+');
+}
+
+/**
+ * 再撮影時に Face AR ループを再起動
+ * カテゴリ併用の選択状態はそのまま維持される
+ */
+function restartActiveFaceLoop() {
+    if (selectedDecorations.size === 0) return;
+    faceLoopGen++;
+    var myGen = faceLoopGen;
+    if (faceAnimFrame) { cancelAnimationFrame(faceAnimFrame); faceAnimFrame = null; }
+    faceFilterActive = true;
+    resetTrackedFaces();
+    if (faceMeshReady) {
+        startFaceLoop(myGen);
+    } else {
+        initFaceFilter().then(function() {
+            if (faceFilterActive && faceMeshReady && myGen === faceLoopGen) {
+                startFaceLoop(myGen);
+            }
+        });
+    }
+}
